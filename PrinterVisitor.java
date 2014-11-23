@@ -68,14 +68,7 @@ public class PrinterVisitor extends xtc.tree.Visitor {
     public void visitClassDeclaration(GNode n) {
         hasConstructor = false;
         current_class = findClass(n.getString(1));
-
-        w.println("__" + current_class.name + "_VT " + "__" + current_class.name + "::__vtable;");
-        w.println("Class __" + current_class.name + "::__class() {");
-        w.println("   static Class k = " + "new __Class(__rt::literal(\"java.lang." + 
-                  current_class.name + ".A\"), (Class)__rt::null());");
-        w.println("   return k;");
-        w.println("}");
-
+        writeConstructor(current_class.name);
         visit(n);
         
         current_class = null;
@@ -451,6 +444,15 @@ public class PrinterVisitor extends xtc.tree.Visitor {
             // visit the nearest instance of a node 
             if (o instanceof Node) dispatch((Node) o);
         }
+    }
+
+    public void writeConstructor(String n) {
+        w.println("__" + n + "_VT " + "__" + n + "::__vtable;");
+        w.println("Class __" + n + "::__class() {");
+        w.println("   static Class k = " + "new __Class(__rt::literal(\"java.lang." + 
+                  n + ".A\"), (Class)__rt::null());");
+        w.println("   return k;");
+        w.println("}");
     }
 
     public String convertString(String str) {
