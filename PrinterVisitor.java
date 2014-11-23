@@ -25,8 +25,7 @@ import xtc.tree.Visitor;
 
 
 public class PrinterVisitor extends xtc.tree.Visitor {
-    private final String REF_FILE_ONE = "referenceFiles/objectMethods.ref";
-    private final String REF_FILE_TWO = "referenceFiles/arrayMethods.ref";
+    public MethodsWriter w;
     private ArrayList<JavaClass> classes;
     private JavaClass current_class;
     private JavaMethod current_method;
@@ -37,54 +36,15 @@ public class PrinterVisitor extends xtc.tree.Visitor {
     private boolean hasConstructor = false;
     private boolean isToString = false;
     private String current_object = "";
-    private PrintWriter w;
-
-    public String writeLastFile() {
-        //add this to header final last
-        String output = "";
-        String line = null;
-        try {
-            BufferedReader inFile = new BufferedReader(new FileReader(REF_FILE_TWO));
-            while ((line = inFile.readLine()) != null) {
-                output += (line + "\n");
-            }
-        } catch (IOException ioe) {
-            ioe.printStackTrace() ;
-        }
-        return output;
-    
-    }
-
-    public String writeBigFile() {
-        //add this to header final last
-        String output = "";
-        String line = null;
-        try {
-            BufferedReader inFile = new BufferedReader(new FileReader(REF_FILE_ONE));
-            while ((line = inFile.readLine()) != null) {
-                output += (line + "\n");
-            }
-        } catch (IOException ioe) {
-            ioe.printStackTrace() ;
-        }
-
-        return output;
-    }
+    private String OUTPUT_FILE_NAME = "main.cc";
 
     public PrinterVisitor(ArrayList<JavaClass> c) {
         classes = c;
         current_class = null;
         current_class_methods = null;
-        try {
-            w = new PrintWriter ("main.cc");
-        } catch (Exception ioe) {}
-        
-        w.println(writeBigFile());
+       
+        w = new MethodsWriter(OUTPUT_FILE_NAME);
         current_class_global_variables = null;
-    }
-
-    public PrintWriter getW() {
-        return w; 
     }
     
     public void visitConstructorDeclaration(GNode n){
@@ -117,7 +77,6 @@ public class PrinterVisitor extends xtc.tree.Visitor {
         w.println("}");
 
         visit(n);
-
         
         current_class = null;
         current_class_global_variables = null;
@@ -143,7 +102,7 @@ public class PrinterVisitor extends xtc.tree.Visitor {
             if (current_method.name.equals("main") && current_method.modifier.equals("public")&& current_method.type.equals("void")){
                 isMainMethod = true;
                 w.println("}}");
-                w.println(writeLastFile());
+                w.writeLastFile();
                 w.println("int main (){");
                 visit(n);
                 w.println("}");
