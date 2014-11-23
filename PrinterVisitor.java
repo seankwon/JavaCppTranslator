@@ -244,10 +244,12 @@ public class PrinterVisitor extends xtc.tree.Visitor {
     }
 
     public void visitCallExpression(GNode n) {
+        JavaMethod method;
         if (n.getNode(0) != null) {
-            if (n.getNode(0).hasName("SelectionExpression") && n.getNode(0).getNode(0).getString(0).equals("System")) {
-                w.print("cout << ");
-                //System.out.println(n.getNode(3).getNode(0).getName());
+            if (n.getNode(0).hasName("SelectionExpression") && 
+                    n.getNode(0).getNode(0).getString(0).equals("System")) {
+                //Case when method is trying to System.out.println()
+                w.print("cout << "); 
                 if(n.getNode(3).getNode(0).hasName("StringLiteral")) {
                     w.print(n.getNode(3).getNode(0).getString(0));
                 } else {
@@ -261,13 +263,15 @@ public class PrinterVisitor extends xtc.tree.Visitor {
                 if(!n.getNode(0).hasName("SelectionExpression")){
                     current_object = n.getNode(0).getString(0);
                 }
+                method = findMethodWithinMain(n.getString(2));
                 methodCalled = "->__vptr->"+convertString( n.getString(2) );
-                isString = (n.getString(2).equals("toString") || 
-                        //TODO fix this, ugly Clean
-                        (findMethodWithinMain(n.getString(2)) != null && findMethodWithinMain(n.getString(2)).type == "__String*"));
+                // set the following to true when program is trying to print a
+                // string or a method with a string return type
+                isString = (n.getString(2).equals("toString") || (method != null && method.type == "__String*"));
                 visit(n);
 
                 methodCalled = "";
+                method = null;
             }
         }
     }
