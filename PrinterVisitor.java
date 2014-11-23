@@ -34,7 +34,7 @@ public class PrinterVisitor extends xtc.tree.Visitor {
     private String methodCalled = "";
     private boolean isMainMethod = false;
     private boolean hasConstructor = false;
-    private boolean isToString = false;
+    private boolean isString = false;
     private String current_object = "";
     private String OUTPUT_FILE_NAME = "main.cc";
 
@@ -52,17 +52,9 @@ public class PrinterVisitor extends xtc.tree.Visitor {
         hasConstructor = true;
         w.print("__" + current_class.name + "::__" + current_class.name +"(" 
                 + current_class.getCparam_string() + "):__vptr(&__vtable) ");
-        for (Object o : n) {
-            if (o instanceof Node){
-                Node temp = (Node) o;
-                if (temp != null){
-                    if (temp.hasName("Block")){
-                        dispatch((Node) o);
-                    }
-                }
-            }
-        }
-        w.println("{}");
+        w.println("{");
+        visit(n);
+        w.println("}");
     }
 
     public void visitClassDeclaration(GNode n) {
@@ -131,17 +123,22 @@ public class PrinterVisitor extends xtc.tree.Visitor {
 
     public void visitArguments(GNode n) {
         w.print(methodCalled);
-
-            if (n.isEmpty()) {
-                w.print("(" + current_object + ")");
-                if(isToString)
-                    w.print("->data");
-                visit(n);
-            } else {
-                w.print("(" + current_object + ",");
-                visit2(n, ",");
-                w.print(")");
+        if (n.isEmpty()) {
+            w.print("(" + current_object + ")");
+            if(isString) {
+                w.print("->data");
+                isString = false; 
             }
+            visit(n);
+        } else if (n.size() == 1){
+            w.print("(" + current_object);
+            visit(n);
+            w.print(")");
+        } else {
+            w.print("(" + current_object + ",");
+            visit2(n, ",");
+            w.print(")");
+        }
     }
 
     public void visitNewClassExpression(GNode n) {
@@ -247,14 +244,15 @@ public class PrinterVisitor extends xtc.tree.Visitor {
     }
 
     public void visitCallExpression(GNode n) {
-        if(n.getNode(0)!=null){
+        if (n.getNode(0) != null) {
             if (n.getNode(0).hasName("SelectionExpression") && n.getNode(0).getNode(0).getString(0).equals("System")) {
                 w.print("cout << ");
                 //System.out.println(n.getNode(3).getNode(0).getName());
-                if(n.getNode(3).getNode(0).hasName("StringLiteral"))
+                if(n.getNode(3).getNode(0).hasName("StringLiteral")) {
                     w.print(n.getNode(3).getNode(0).getString(0));
-                else
+                } else {
                     visit(n.getNode(3));
+                }
                 if (n.getString(2).equals("println")) {
                     w.print(" << std::endl");
                 }
@@ -264,22 +262,12 @@ public class PrinterVisitor extends xtc.tree.Visitor {
                     current_object = n.getNode(0).getString(0);
                 }
                 methodCalled = "->__vptr->"+convertString( n.getString(2) );
-                isToString = (n.getString(2).equals("toString"));
+                isString = (n.getString(2).equals("toString") || 
+                        //TODO fix this, ugly Clean
+                        (findMethodWithinMain(n.getString(2)) != null && findMethodWithinMain(n.getString(2)).type == "__String*"));
                 visit(n);
-                /*
-                for (Object o : n) {
-                    if (o instanceof Node){
-                        Node temp = (Node) o;
-                        if(temp != null){
-                            if(!temp.hasName("PrimaryIdentifier")){
-                                dispatch((Node) o);
-                            }
-                        }
-                    }
-                }*/
 
                 methodCalled = "";
-                //w.print(n.getString(2));
             }
         }
     }
@@ -419,6 +407,16 @@ public class PrinterVisitor extends xtc.tree.Visitor {
         for(int i=0; i<classes.size(); i++){
             if(classes.get(i).name.equals(n))
                 return classes.get(i);
+        }
+        return null;
+    }
+
+    public JavaMethod findMethodWithinMain(String n) {
+        for (int i = 0; i < classes.size(); i++) {
+            for (int j = 0; j < classes.get(i).methods.size(); j++)  {
+                if (classes.get(i).methods.get(j).name.equals(n)) 
+                    return classes.get(i).methods.get(j);
+            }
         }
         return null;
     }
