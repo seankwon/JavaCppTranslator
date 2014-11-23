@@ -1,0 +1,63 @@
+import java.util.ArrayList;
+import java.util.Hashtable;
+
+public class structDataDeclarator {
+    /*
+     * TODO: must convert "boolean" to bool
+     * TODO: use a java -> c++ unique expressions translator
+     * TODO: Grab types of formal parameters
+     */
+    private String className;
+    private String structString;
+    private Hashtable<Integer, String> methodNames;
+    private Hashtable<Integer, String> methodModifiers;
+    private Hashtable<Integer, String> methodTypes;
+    private Hashtable<Integer, ArrayList<String>> methodParameters;
+    private ArrayList<String> cReadableMethodNames;
+
+    public structDataDeclarator(String cN, 
+                                Hashtable<Integer, String> mN,
+                                Hashtable<Integer, String> mM,
+                                Hashtable<Integer, String> mT, 
+                                Hashtable<Integer, ArrayList<String>> mP) {
+        this.className = cN;
+        this.methodNames = mN;      
+        this.methodModifiers = mM;      
+        this.methodTypes = mT;      
+        this.methodParameters = mP;
+        this.cReadableMethodNames = new ArrayList<String>();
+        this.structString = "";
+
+        this.convertJavaMethodsToCpp();
+    }
+
+    public void convertJavaMethodsToCpp() {
+        String methodBuilder = "";
+        for (int i = 0; i < methodTypes.size(); i++) {
+            methodBuilder = ("static " + methodTypes.get(i) + " " + methodNames.get(i));
+            methodBuilder += "(";
+            for (int j = 0; j < methodParameters.get(i).size(); j++) {
+                methodBuilder += methodParameters.get(i).get(j);
+                if (j != methodParameters.get(i).size()-1)
+                    methodBuilder += ", ";
+            }
+            methodBuilder += ");";
+            cReadableMethodNames.add(methodBuilder);
+            methodBuilder = "";
+        }
+    }
+
+    @Override 
+    public String toString() {
+        structString += "struct __" + className + " {\n";
+        structString += "__" + className + "_VT* " + "__vptr;\n";
+        structString += "__" + className + "();\n";
+        for (String str : cReadableMethodNames) {
+            structString += str + "\n";
+        }
+        structString += "static Class __class();\n";
+        structString += "static __" + className + "_VT __vtable;\n";
+        structString += "}";
+        return structString;
+    }
+}

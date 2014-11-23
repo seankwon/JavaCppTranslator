@@ -1,0 +1,41 @@
+// ===========================================================================
+
+namespace __rt {
+
+  // The function returning the canonical null value.
+  java::lang::Object null() {
+    static java::lang::Object value(0);
+    return value;
+  }
+
+  // Template specialization for arrays of ints.
+  template<>
+  java::lang::Class Array<int32_t>::__class() {
+    static java::lang::Class k =
+      new java::lang::__Class(literal("[I"),
+                              java::lang::__Object::__class(),
+                              java::lang::__Integer::TYPE());
+    return k;
+  }
+
+  // Template specialization for arrays of objects.
+  template<>
+  java::lang::Class Array<java::lang::Object>::__class() {
+    static java::lang::Class k =
+      new java::lang::__Class(literal("[Ljava.lang.Object;"),
+                              java::lang::__Object::__class(),
+                              java::lang::__Object::__class());
+    return k;
+  }
+
+  // Template specialization for arrays of strings.
+  template<>
+  java::lang::Class Array<java::lang::String>::__class() {
+    static java::lang::Class k =
+      new java::lang::__Class(literal("[Ljava.lang.String;"),
+                              java::lang::__Object::__class(),
+                              java::lang::__String::__class());
+    return k;
+  }
+
+}

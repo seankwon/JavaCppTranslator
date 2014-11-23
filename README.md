@@ -80,3 +80,12 @@ To merge changes from one branch to another
     - git checkout [branch you want to merge changes in]
     - git merge [source branch]
 
+
+#How to compile
+
+1. "make program"
+2. "java Sentinel [name of java test file]"
+3. "g++ main.h"
+4. "g++ main.cc"
+5. "./a.out"
+3. done
