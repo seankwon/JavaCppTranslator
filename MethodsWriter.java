@@ -39,10 +39,5 @@ public class MethodsWriter {
     public void writeLastFile() {
         writer.println(bigInput(REF_FILE_TWO));
     }
-    //write ref file one
-    //write implementations
-    //write ref file two
-    //write main method
-    //close file
 
 }

@@ -204,12 +204,12 @@ __A::__A():__vptr(&__vtable){}
 __String* __A::toString(A __this){
 return new __String("A");
 }
-__Test001_VT __Test001::__vtable;
-Class __Test001::__class() {
-   static Class k = new __Class(__rt::literal("java.lang.Test001.A"), (Class)__rt::null());
+__Test002_VT __Test002::__vtable;
+Class __Test002::__class() {
+   static Class k = new __Class(__rt::literal("java.lang.Test002.A"), (Class)__rt::null());
    return k;
 }
-__Test001::__Test001():__vptr(&__vtable){}
+__Test002::__Test002():__vptr(&__vtable){}
 }}
 // ===========================================================================
 
@@ -258,5 +258,6 @@ using namespace java::lang;
 using namespace __rt;
 using namespace std;
 A a = new __A();
-cout << a->__vptr->toString(a)->data << std::endl;
+Object o = a;
+cout << o->__vptr->toString(o)->data << std::endl;
 }
