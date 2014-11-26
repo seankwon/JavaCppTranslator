@@ -35,7 +35,7 @@ public class PrinterVisitor extends xtc.tree.Visitor {
     private boolean isMainMethod = false;
     private boolean hasConstructor = false;
     private boolean isString = false;
-    private String current_object = "";
+    private String currentObject = "";
     private String OUTPUT_FILE_NAME = "main.cc";
 
     public PrinterVisitor(ArrayList<JavaClass> c) {
@@ -117,25 +117,25 @@ public class PrinterVisitor extends xtc.tree.Visitor {
     }
 
     public void visitThisExpression(GNode n){
-        w.print("__this");
+        w.print("this");
         visit(n);
     }
 
     public void visitArguments(GNode n) {
         w.print(methodCalled);
         if (n.isEmpty()) {
-            w.print("(" + current_object + ")");
+            w.print("(" + currentObject + ")");
             if(isString) {
                 w.print("->data");
                 isString = false; 
             }
             visit(n);
         } else if (n.size() == 1){
-            w.print("(" + current_object);
+            w.print("(");
             visit(n);
             w.print(")");
         } else {
-            w.print("(" + current_object + ",");
+            w.print("(" + currentObject + ",");
             visit2(n, ",");
             w.print(")");
         }
@@ -261,7 +261,7 @@ public class PrinterVisitor extends xtc.tree.Visitor {
             } else {
                 int i = 1;
                 if(!n.getNode(0).hasName("SelectionExpression")){
-                    current_object = n.getNode(0).getString(0);
+                    currentObject = n.getNode(0).getString(0);
                 }
                 method = findMethodWithinMain(n.getString(2));
                 methodCalled = "->__vptr->"+convertString( n.getString(2) );
@@ -278,7 +278,7 @@ public class PrinterVisitor extends xtc.tree.Visitor {
 
     public void visitSelectionExpression(GNode n) {
         if (n.size() == 2) {
-            current_object = n.getString(1);
+            currentObject = n.getString(1);
             dispatch(n.getNode(0)); 
             w.print("->");
 
