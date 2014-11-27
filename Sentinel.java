@@ -111,7 +111,9 @@ public class Sentinel extends xtc.util.Tool {
         new JavaAstSimplifier().dispatch(node);
         
         // construct the symbol table
-        new SymbolTableBuilder(classes, runtime, table).dispatch(node);
+        SymbolTableBuilder svisitor = new SymbolTableBuilder(classes, runtime, table);
+        svisitor.dispatch(node);
+        svisitor.close();
         table.current().dump(runtime.console());
         runtime.console().flush();
         /*

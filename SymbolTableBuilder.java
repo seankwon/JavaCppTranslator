@@ -23,8 +23,7 @@ import xtc.tree.Printer;
 import xtc.util.SymbolTable;
 import xtc.util.Runtime;
 import xtc.type.*;
-//TODO: visitFieldDeclaration, visitDeclarator
-//
+
 public class SymbolTableBuilder extends Visitor {
     final private SymbolTable table;
     final private Runtime runtime;
@@ -81,65 +80,63 @@ public class SymbolTableBuilder extends Visitor {
         table.exit();
     }
 
-    public void visitConstructorDeclaration(GNode n){
-        //FIXME: doesnt handle multiple params
-        hasConstructor = true;
-        w.print("__" + current_class.name + "::__" + current_class.name +"(" 
-                + current_class.getCparam_string() + "):__vptr(&__vtable) ");
-        w.println("{");
-        table.mark(n);
-        visit(n);
-        table.exit(n);
-        w.println("}");
-    }
-
     public void visitMethodDeclaration(GNode n) {
+        System.out.println(n.toString());
         String methodName = JavaEntities.methodSymbolFromAst(n);
         table.enter(methodName);
         table.mark(n);
-        if(!hasConstructor){
-            w.println("__" + current_class.name + "::__" + current_class.name +"(" 
-                      + current_class.getCparam_string() + "):__vptr(&__vtable){}");
-            hasConstructor = true;
-        }
-        if (current_class == null) {
-            current_class_methods = null;
-            current_class_global_variables = null;
-        } else {
-            current_class_methods = current_class.methods;
-            current_class_global_variables = current_class.globalVars;
-        }
-        if (current_class_methods != null){
-            current_method = findMethod(methodName);
-            if (current_method.name.equals("main") && current_method.modifier.equals("public")&& current_method.type.equals("void")){
+        if (findClass(n.getString(3)) == null) {
+            if(!hasConstructor){
+                w.println("__" + current_class.name + "::__" + current_class.name +"(" 
+                          + current_class.getCparam_string() + "):__vptr(&__vtable){}");
+                hasConstructor = true;
+            }
+            if (current_class == null) {
+                current_class_methods = null;
+                current_class_global_variables = null;
+            } else {
+                current_class_methods = current_class.methods;
+                current_class_global_variables = current_class.globalVars;
+            }
+            if (current_class_methods != null){
+                current_method = findMethod(n.getString(3));
+                if (current_method.name.equals("main") && current_method.modifier.equals("public")&& current_method.type.equals("void")){
+                    isMainMethod = true;
+                    w.println("}}");
+                    w.writeLastFile();
+                    w.println("int main (){");
+                    visit(n);
+                    w.println("}");
+                    current_method = null;
+                } else {
+                    w.print(current_method.type + " __" + current_class.name + "::" 
+                                       + current_method.name + "(" + current_class.name + " __this");
+                    Iterator<Map.Entry<String, String>> it = current_method.params.entrySet().iterator();
+                    while (it.hasNext()) {
+                        Map.Entry<String, String> entry = it.next();
+                        w.print(", " + entry.getValue() + " " + entry.getKey());
+                    }
+                    w.println("){");
+
+                    visit(n);
+                    w.println("}");
+                    current_method = null;
+                }
+            } else {
                 isMainMethod = true;
                 w.println("}}");
-                w.writeLastFile();
-                w.println("int main (){");
-                visit(n);
-                w.println("}");
-                current_method = null;
-            } else {
-                w.print(current_method.type + " __" + current_class.name + "::" 
-                                   + current_method.name + "(" + current_class.name + " __this");
-                Iterator<Map.Entry<String, String>> it = current_method.params.entrySet().iterator();
-                while (it.hasNext()) {
-                    Map.Entry<String, String> entry = it.next();
-                    w.print(", " + entry.getValue() + " " + entry.getKey());
-                }
-                w.println("){");
-
+                w.print("int main (){");
                 visit(n);
                 w.println("}");
                 current_method = null;
             }
         } else {
-            isMainMethod = true;
-            w.println("}}");
-            w.print("int main (){");
+            hasConstructor = true;
+            w.print("__" + current_class.name + "::__" + current_class.name +"(" 
+                    + current_class.getCparam_string() + "):__vptr(&__vtable) ");
+            w.println("{");
             visit(n);
             w.println("}");
-            current_method = null;
         }
         table.exit();
     }
@@ -206,6 +203,15 @@ public class SymbolTableBuilder extends Visitor {
         visit(n);
     }
 
+    public void visitDeclarator(GNode n) {
+        if(n.getGeneric(2) == null)
+            w.print(convertString(n.getString(0)));
+        else{
+            w.print(convertString(n.getString(0)) + " = ");
+        }
+        visit(n);
+    }
+
     public void visitForStatement(GNode n) {
         int i = 0;
         w.print("for(");
@@ -235,6 +241,11 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public final List<Type> visitFieldDeclaration(final GNode n) {
+        if(current_class!= null && current_method!=null){
+            w.print(convertString(n.getGeneric(1).getGeneric(0).getString(0)) + " ");
+            visit(n);
+            w.println(";");
+        }
         @SuppressWarnings("unchecked")
             final List<Attribute> modifiers = (List<Attribute>) dispatch(n.getNode(0));
         Type type = (Type) dispatch(n.getNode(1));
@@ -449,6 +460,10 @@ public class SymbolTableBuilder extends Visitor {
         }
     }
 
+    public void close(){
+        w.close();
+        return;
+    }
 
     // What if for statement does not instantiate the variable inside the loop? (NEED TO ADD)
     public void visitBasicForControl(GNode n){
