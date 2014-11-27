@@ -20,6 +20,9 @@ import java.util.Hashtable;
 import java.util.ArrayList;
 
 import xtc.lang.JavaFiveParser;
+import xtc.lang.JavaEntities;
+import xtc.lang.JavaExternalAnalyzer;
+import xtc.lang.JavaAstSimplifier;
 import xtc.parser.ParseException;
 import xtc.parser.Result;
 import xtc.tree.GNode;
@@ -27,6 +30,7 @@ import xtc.tree.Node;
 import xtc.type.Type;
 import xtc.tree.Printer;
 import xtc.tree.Visitor;
+import xtc.util.SymbolTable;
 
 public class Sentinel extends xtc.util.Tool {
     private CustomVisitor visitor;
@@ -101,15 +105,25 @@ public class Sentinel extends xtc.util.Tool {
             } catch (Exception ex) {   }
         }
 
+        SymbolTable table = new SymbolTable();
+
+        // do some simplifications on the AST
+        new JavaAstSimplifier().dispatch(node);
         
-        pvisitor = new PrinterVisitor(classes);
-        pvisitor.dispatch(node);
-        pvisitor.close();
+        // construct the symbol table
+        SymbolTableBuilder svisitor = new SymbolTableBuilder(classes, runtime, table);
+        svisitor.dispatch(node);
+        svisitor.close();
+        table.current().dump(runtime.console());
+        runtime.console().flush();
         /*
          * XXX PLACE ALL CUSTOM CLASS DECLARATIONS HERE!
          * "classes" is an arraylist of JavaClass
          * All JavaClass have JavaMethod classes
          * Manipulate the classes variable!
+        pvisitor = new PrinterVisitor(classes);
+        pvisitor.dispatch(node);
+        pvisitor.close();
          *
          */
     }
