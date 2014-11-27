@@ -34,7 +34,6 @@ import xtc.util.SymbolTable;
 
 public class Sentinel extends xtc.util.Tool {
     private CustomVisitor visitor;
-    private PrinterVisitor pvisitor;
     private HeaderFileWriter hWriter;
     private ArrayList<JavaClass> classes;
     private String fileName;
