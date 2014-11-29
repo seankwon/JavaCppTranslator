@@ -100,28 +100,10 @@ public class SymbolTableBuilder extends Visitor {
             }
             if (current_class_methods != null){
                 current_method = findMethod(n.getString(3));
-                if (current_method.name.equals("main") && current_method.modifier.equals("public")&& current_method.type.equals("void")){
-                    isMainMethod = true;
-                    w.println("}}");
-                    w.writeLastFile();
-                    w.println("int main (){");
-                    visit(n);
-                    w.println("}");
-                    current_method = null;
-                } else {
-                    w.print(current_method.type + " __" + current_class.name + "::" 
-                                       + current_method.name + "(" + current_class.name + " __this");
-                    Iterator<Map.Entry<String, String>> it = current_method.params.entrySet().iterator();
-                    while (it.hasNext()) {
-                        Map.Entry<String, String> entry = it.next();
-                        w.print(", " + entry.getValue() + " " + entry.getKey());
-                    }
-                    w.println("){");
-
-                    visit(n);
-                    w.println("}");
-                    current_method = null;
-                }
+                writeMainMethod();
+                visit(n);
+                w.println("}");
+                current_method = null;
             } else {
                 isMainMethod = true;
                 w.println("}}");
@@ -552,6 +534,24 @@ public class SymbolTableBuilder extends Visitor {
         return null;
     }
 
+    public void writeMainMethod() {
+        if (current_method.name.equals("main") && current_method.modifier.equals("public")&& current_method.type.equals("void")){
+            isMainMethod = true;
+            w.println("}}");
+            w.writeLastFile();
+            w.println("int main (){");
+        } else {
+            w.print(current_method.type + " __" + current_class.name + "::" 
+                               + current_method.name + "(" + current_class.name + " __this");
+            Iterator<Map.Entry<String, String>> it = current_method.params.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<String, String> entry = it.next();
+                w.print(", " + entry.getValue() + " " + entry.getKey());
+            }
+            w.println("){");
+        }
+    }
+
     public JavaMethod findMethod(String n){
         for(int i=0; i < current_class_methods.size(); i++){
             if(current_class_methods.get(i).name.equals(n))
@@ -568,6 +568,7 @@ public class SymbolTableBuilder extends Visitor {
             if (i < n.size()) w.print(s);
         }
     }
+
     public void visit(Node n) {
         for (Object o : n) {
             // visit the nearest instance of a node 
