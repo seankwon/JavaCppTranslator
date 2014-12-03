@@ -172,8 +172,11 @@ public class HeaderFileWriter {
         for (JavaClass c : classes) {
             tempStr += "    struct __" + c.name + "_VT {\n";
             tempStr += "      Class __isa;\n";
+            tempStr += "      void (*__delete)(__" + c.name + "*)\n";
             consStr += "      __" + c.name + "_VT()\n";
-            consStr += "        : __isa(__" + c.name + "::__class())";
+            //FIXME this part needs a little cleanup
+            consStr += "        : __isa(__" + c.name + "::__class()),";
+            consStr += "        : __delete(__&__rt::__delete<__" + c.name + ">)";
             consStr += (c.methods.size() <= 0) ? " {\n" : ", \n";
 
             ////////////////////////////////////Needs work
@@ -346,7 +349,7 @@ public class HeaderFileWriter {
         output+="    typedef __String* String;\n";
 
         for (JavaClass c : classes) {
-            output += "    typedef __" + c.name + "* " + c.name + ";\n";
+            output += "    typedef __rt::Ptr<__" + c.name + "> " + c.name + ";\n";
         }
 
         output += "  }\n";
