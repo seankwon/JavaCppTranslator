@@ -358,6 +358,7 @@ public class HeaderFileWriter {
     public String headerOutput() {
         String output = "";
         output += "#pragma once\n#include <stdint.h>\n#include <string>\n";
+        output += "#include \"ptr.h\"";
         output += fwdDeclarationsString();
         handleOverride(classes);
         setStructDefinitionString(classes);       

@@ -30,6 +30,7 @@ namespace java {
       static bool equals(Object, Object);
       static Class getClass(Object);
       static String toString(Object);
+      static Object init(Object __this) { return __this; }      
 
       // The function returning the class object representing
       // java.lang.Object.
@@ -42,6 +43,7 @@ namespace java {
     // The vtable layout for java.lang.Object.
     struct __Object_VT {
       Class __isa;
+      void (*__delete)(__Object*);
       int32_t (*hashCode)(Object);
       bool (*equals)(Object, Object);
       Class (*getClass)(Object);
@@ -49,6 +51,7 @@ namespace java {
 
       __Object_VT()
       : __isa(__Object::__class()),
+        __delete(&__rt::__delete<__Object>),
         hashCode(&__Object::hashCode),
         equals(&__Object::equals),
         getClass(&__Object::getClass),
@@ -72,6 +75,7 @@ namespace java {
       static String toString(String);
       static int32_t length(String);
       static char charAt(String, int32_t);
+      static String init(String __this) { return __this; }
 
       // The function returning the class object representing
       // java.lang.String.
@@ -81,9 +85,12 @@ namespace java {
       static __String_VT __vtable;
     };
 
+    std::ostream& operator<<(std::ostream& out, String);
+
     // The vtable layout for java.lang.String.
     struct __String_VT {
       Class __isa;
+      void (*__delete)(__String*);
       int32_t (*hashCode)(String);
       bool (*equals)(String, Object);
       Class (*getClass)(String);
@@ -93,6 +100,7 @@ namespace java {
       
       __String_VT()
       : __isa(__String::__class()),
+        __delete(&__rt::__delete<__String>),
         hashCode(&__String::hashCode),
         equals(&__String::equals),
         getClass((Class(*)(String))&__Object::getClass),
@@ -115,7 +123,7 @@ namespace java {
       // The constructor.
       __Class(String name,
               Class parent,
-              Class component = (Class)__rt::null(),
+              Class component = __rt::null(),
               bool primitive = false);
 
       // The instance methods of java.lang.Class.
@@ -126,6 +134,7 @@ namespace java {
       static bool isArray(Class);
       static Class getComponentType(Class);
       static bool isInstance(Class, Object);
+      static Class init(Class __this) { return __this; }
 
       // The function returning the class object representing
       // java.lang.Class.
@@ -138,6 +147,7 @@ namespace java {
     // The vtable layout for java.lang.Class.
     struct __Class_VT {
       Class __isa;
+      void (*__delete)(__Class*);
       int32_t (*hashCode)(Class);
       bool (*equals)(Class, Object);
       Class (*getClass)(Class);
@@ -151,6 +161,7 @@ namespace java {
 
       __Class_VT()
       : __isa(__Class::__class()),
+        __delete(&__rt::__delete<__Class>),
         hashCode((int32_t(*)(Class))&__Object::hashCode),
         equals((bool(*)(Class,Object))&__Object::equals),
         getClass((Class(*)(Class))&__Object::getClass),
