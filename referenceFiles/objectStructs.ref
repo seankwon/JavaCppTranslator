@@ -5,6 +5,11 @@ namespace __rt {
 
   // The function returning the canonical null value.
   java::lang::Object null();
+  // The template function for the virtual destructor.
+  template <typename T>
+  void __delete(T* addr) {
+    delete addr;
+  }
 
 }
 
