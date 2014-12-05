@@ -292,6 +292,8 @@ public class SymbolTableBuilder extends Visitor {
     public void visitPrimaryIdentifier(GNode n){
         //w.print(n.getString(0));
         boolean thisP = false;
+        String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
+            n.getString(0);
         if (current_class_global_variables != null)
             for (JavaGlobalVariable g : current_class_global_variables) {
                 if (g.name.equals(n.getString(0))) {
@@ -300,9 +302,9 @@ public class SymbolTableBuilder extends Visitor {
             }
 
         if (thisP) {
-            w.print("__this->"+allVars.get(n.getString(0)));
+            w.print("__this->"+var);
         } else {
-            w.print(allVars.get(n.getString(0)));
+            w.print(var);
         }
         visit(n);
     }
