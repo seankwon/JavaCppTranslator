@@ -158,6 +158,7 @@ public class HeaderFileWriter {
 
             tempStr += "\n";
             tempStr += "      static Class __class();\n\n";
+            tempStr += "      static " + c.name + " init("+ c.name + ");\n\n";
             tempStr += "      static __" + c.name + "_VT __vtable;\n";
             tempStr += "    };\n\n\n";
             structDefinitionStrings.add(tempStr);
@@ -172,11 +173,11 @@ public class HeaderFileWriter {
         for (JavaClass c : classes) {
             tempStr += "    struct __" + c.name + "_VT {\n";
             tempStr += "      Class __isa;\n";
-            tempStr += "      void (*__delete)(__" + c.name + "*)\n";
+            tempStr += "      void (*__delete)(__" + c.name + "*);\n";
             consStr += "      __" + c.name + "_VT()\n";
             //FIXME this part needs a little cleanup
-            consStr += "        : __isa(__" + c.name + "::__class()),";
-            consStr += "        : __delete(__&__rt::__delete<__" + c.name + ">)";
+            consStr += "        : __isa(__" + c.name + "::__class()),\n";
+            consStr += "        __delete(&__rt::__delete<__" + c.name + ">)";
             consStr += (c.methods.size() <= 0) ? " {\n" : ", \n";
 
             ////////////////////////////////////Needs work
@@ -344,9 +345,9 @@ public class HeaderFileWriter {
         output+="    struct __Class;\n";
         output+="    struct __Class_VT;\n\n";
 
-        output+="    typedef __Object* Object;\n";
-        output+="    typedef __Class* Class;\n";
-        output+="    typedef __String* String;\n";
+        output+="    typedef __rt::Ptr<__Object> Object;\n";
+        output+="    typedef __rt::Ptr<__Class> Class;\n";
+        output+="    typedef __rt::Ptr<__String> String;\n";
 
         for (JavaClass c : classes) {
             output += "    typedef __rt::Ptr<__" + c.name + "> " + c.name + ";\n";
@@ -361,17 +362,18 @@ public class HeaderFileWriter {
     public String headerOutput() {
         String output = "";
         output += "#pragma once\n#include <stdint.h>\n#include <string>\n";
-        output += "#include \"ptr.h\"";
+        output += "#include \"ptr.h\"\n";
         output += fwdDeclarationsString();
         handleOverride(classes);
         setStructDefinitionString(classes);       
         output += writeBigFile(REF_FILE_ONE);
+        output += writeBigFile(REF_FILE_TWO);
+        output += "\n\nnamespace java {\n";
+        output += "  namespace lang {\n";
         output += dataStructsString() + "\n";
-        output += vTableStr(); //REMOVED SO MAIN.H COMPILES
-        
+        output += vTableStr(); 
         output += "  }\n";
         output += "}\n";
-        output += writeBigFile(REF_FILE_TWO);
         return output;
     }
 

@@ -195,3 +195,5 @@ namespace java {
         new __Class(__rt::literal("int"), __rt::null(), __rt::null(), true);
       return k;
     }
+  }
+}

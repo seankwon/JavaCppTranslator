@@ -217,3 +217,5 @@ namespace java {
 
     class ArrayIndexOutOfBoundsException : public IndexOutOfBoundsException {
     };
+  }
+}
