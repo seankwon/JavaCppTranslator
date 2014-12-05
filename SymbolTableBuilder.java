@@ -87,8 +87,8 @@ public class SymbolTableBuilder extends Visitor {
         table.enter(methodName);
         table.mark(n);
         if (findClass(n.getString(3)) == null) {
+            writeInit(current_class.name);
             if(!hasConstructor){
-                writeInit(current_class.name);
                 w.println("__" + current_class.name + "::__" + current_class.name +"(" 
                           + current_class.getCparam_string() + "):__vptr(&__vtable){}");
                 hasConstructor = true;
