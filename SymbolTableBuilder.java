@@ -87,6 +87,7 @@ public class SymbolTableBuilder extends Visitor {
         table.mark(n);
         if (findClass(n.getString(3)) == null) {
             if(!hasConstructor){
+                writeInit(current_class.name);
                 w.println("__" + current_class.name + "::__" + current_class.name +"(" 
                           + current_class.getCparam_string() + "):__vptr(&__vtable){}");
                 hasConstructor = true;
@@ -144,8 +145,15 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitNewClassExpression(GNode n) {
-        w.print("new " + "__" + n.getGeneric(2).getString(0));
-        visit(n);
+        String classN = n.getGeneric(2).getString(0);
+        //System.out.println(n.getGeneric(3).size());
+        w.print("__"+classN+"::init(new __"+classN+"()");
+        if (n.getGeneric(3).size() == 0) {
+            w.print(")");
+            dispatch(n.getGeneric(4));
+        } else {
+            visit(n);
+        }
     }
 
     public void visitThisExpression(GNode n){
@@ -538,7 +546,6 @@ public class SymbolTableBuilder extends Visitor {
         if (current_method.name.equals("main") && current_method.modifier.equals("public")&& current_method.type.equals("void")){
             isMainMethod = true;
             w.println("}}");
-            w.writeLastFile();
             w.println("int main (){");
         } else {
             w.print(current_method.type + " __" + current_class.name + "::" 
@@ -579,10 +586,17 @@ public class SymbolTableBuilder extends Visitor {
     public void writeVTable(String n) {
         w.println("__" + n + "_VT " + "__" + n + "::__vtable;");
         w.println("Class __" + n + "::__class() {");
-        w.println("   static Class k = " + "new __Class(__rt::literal(\"java.lang." + 
-                  n + ".A\"), (Class)__rt::null());");
+        w.println("   static Class k = " + "new __Class(__rt::literal(\"" + 
+                  n + "\"), (Class)__rt::null());");
         w.println("   return k;");
         w.println("}");
+    }
+
+    public void writeInit(String n) {
+        w.println(n+" __"+n+"::init("+n+" __this) {\n") ;
+        w.println("  __Object::init(__this);\n") ;
+        w.println("  return __this;\n") ;
+        w.println("}\n\n") ;
     }
 
     public String convertString(String str) {

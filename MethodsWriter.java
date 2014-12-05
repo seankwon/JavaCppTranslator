@@ -14,6 +14,9 @@ public class MethodsWriter {
             writer = new PrintWriter(OUTPUT_FILE);
         } catch(Exception e) {}
         writer.println(bigInput(REF_FILE_ONE));
+        writeLastFile();
+        writer.println("namespace java {\n");
+        writer.println("  namespace lang {\n");
     }
 
     public void print(String s) {writer.print(s);}
@@ -37,6 +40,7 @@ public class MethodsWriter {
     }
 
     public void writeLastFile() {
+
         writer.println(bigInput(REF_FILE_TWO));
     }
 
