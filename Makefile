@@ -6,3 +6,9 @@ program:
 
 all:
 	javac *.java
+
+compile:
+	g++ main.cc
+
+run:
+	./a.out
