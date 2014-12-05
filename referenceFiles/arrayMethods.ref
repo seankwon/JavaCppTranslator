@@ -33,7 +33,7 @@ namespace __rt {
   java::lang::Class Array<java::lang::String>::__class() {
     static java::lang::Class k =
       new java::lang::__Class(literal("[Ljava.lang.String;"),
-                              java::lang::__Object::__class(),
+                              Array<java::lang::Object>::__class(),
                               java::lang::__String::__class());
     return k;
   }
