@@ -29,6 +29,7 @@ public class SymbolTableBuilder extends Visitor {
     final private Runtime runtime;
     public MethodsWriter w;
     private ArrayList<JavaClass> classes;
+    private Hashtable<String, String> allVars = new Hashtable<String, String>();
     private JavaClass current_class;
     private JavaMethod current_method;
     private ArrayList<JavaMethod> current_class_methods;
@@ -262,6 +263,7 @@ public class SymbolTableBuilder extends Visitor {
                                                final Type type, final GNode declarators) {
         final List<Type> result = new ArrayList<Type>();
         boolean isLocal = JavaEntities.isScopeLocal(table.current().getQualifiedName());
+        GNode checkNode = declarators.getGeneric(0).getGeneric(2);
         for (final Object i : declarators) {
             GNode declNode = (GNode) i;
             String name = declNode.getString(0);
@@ -269,6 +271,14 @@ public class SymbolTableBuilder extends Visitor {
                                                            countDimensions(declNode.getGeneric(1)));
             Type entity = isLocal ? VariableT.newLocal(dimType, name) : 
                 VariableT.newField(dimType, name);
+            if (checkNode != null) {
+                if (checkNode.hasName("NewClassExpression"))
+                    allVars.put(name, name);
+                else if (checkNode.hasName("PrimaryIdentifier"))
+                    allVars.put(name, allVars.get(checkNode.getString(0)));
+            }
+
+
             for (Attribute mod : modifiers)
                 entity.addAttribute(mod);
             if (null == table.current().lookupLocally(name)) {
@@ -290,9 +300,9 @@ public class SymbolTableBuilder extends Visitor {
             }
 
         if (thisP) {
-            w.print("__this->"+n.getString(0));
+            w.print("__this->"+allVars.get(n.getString(0)));
         } else {
-            w.print(n.getString(0));
+            w.print(allVars.get(n.getString(0)));
         }
         visit(n);
     }
