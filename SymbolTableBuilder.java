@@ -295,20 +295,11 @@ public class SymbolTableBuilder extends Visitor {
         boolean thisP = false;
         String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
             n.getString(0);
-        /**
-        if (current_class_global_variables != null)
-            for (JavaGlobalVariable g : current_class_global_variables) {
-                if (g.name.equals(n.getString(0))) {
-                    thisP = true; 
-                } 
-            }
-        **/
-
+        boolean scope = isLocalOrParam(table.current().lookup(var).toString());
         //look into current Symbol table using the name of the variable to check if it is a local variable. 
-        System.out.println(table.current().lookupLocally(var));
-        if(table.current().lookupLocally(var) == null){     //this returns true if the variable is not a local variable
+        if(!scope){     //this returns true if the variable is not a local variable
             w.print("__this->"+var);    
-        }else {     //else the variable is a local variable
+        } else {     //else the variable is a local variable
             w.print(var);
         }
         visit(n);
@@ -625,6 +616,11 @@ public class SymbolTableBuilder extends Visitor {
             w.print(c.name + " __this) ");
         w.println("{");
         w.println("__this = __" + current_class.name + "::init(__this);");
+    }
+
+    public boolean isLocalOrParam(String s) {
+        String c = s.substring(0, s.indexOf("("));
+        return (c.equals("param") || c.equals("local"));
     }
 
     public String convertString(String str) {
