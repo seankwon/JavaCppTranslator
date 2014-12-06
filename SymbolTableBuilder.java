@@ -82,15 +82,15 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitMethodDeclaration(GNode n) {
-        System.out.println(n.toString());
         String methodName = JavaEntities.methodSymbolFromAst(n);
         table.enter(methodName);
         table.mark(n);
         if (findClass(n.getString(3)) == null) {
             writeInit(current_class.name);
-            if(!hasConstructor){
-                w.println("__" + current_class.name + "::__" + current_class.name +"(" 
-                          + current_class.getCparam_string() + "):__vptr(&__vtable){}");
+            if (!hasConstructor) {
+                writeConstructor(current_class);
+                w.println("return __this;");
+                w.println("}");
                 hasConstructor = true;
             }
             if (current_class == null) {
@@ -116,10 +116,9 @@ public class SymbolTableBuilder extends Visitor {
             }
         } else {
             hasConstructor = true;
-            w.print("__" + current_class.name + "::__" + current_class.name +"(" 
-                    + current_class.getCparam_string() + "):__vptr(&__vtable) ");
-            w.println("{");
+            writeConstructor(current_class);
             visit(n);
+            w.println("return __this;");
             w.println("}");
         }
         table.exit();
@@ -148,12 +147,14 @@ public class SymbolTableBuilder extends Visitor {
     public void visitNewClassExpression(GNode n) {
         String classN = n.getGeneric(2).getString(0);
         //System.out.println(n.getGeneric(3).size());
-        w.print("__"+classN+"::init(new __"+classN+"()");
+        w.print("__"+classN+"::constructor(new __"+classN+"()");
         if (n.getGeneric(3).size() == 0) {
             w.print(")");
             dispatch(n.getGeneric(4));
         } else {
+            w.print(", ");
             visit(n);
+            w.print(")");
         }
     }
 
@@ -605,10 +606,21 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void writeInit(String n) {
+        w.println("__" + n + "::__" + n +"():__vptr(&__vtable){}");
         w.println(n+" __"+n+"::init("+n+" __this) {\n") ;
         w.println("  __Object::init(__this);\n") ;
         w.println("  return __this;\n") ;
         w.println("}\n\n") ;
+    }
+
+    public void writeConstructor(JavaClass c) {
+        w.print(c.name + " __" + c.name + "::constructor(");
+        if (c.getCparam_string().length() != 0)
+            w.print(c.name + " __this, " + c.getCparam_string() + ") ");
+        else
+            w.print(c.name + " __this) ");
+        w.println("{");
+        w.println("__this = __" + current_class.name + "::init(__this);");
     }
 
     public String convertString(String str) {
