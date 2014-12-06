@@ -295,16 +295,20 @@ public class SymbolTableBuilder extends Visitor {
         boolean thisP = false;
         String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
             n.getString(0);
+        /**
         if (current_class_global_variables != null)
             for (JavaGlobalVariable g : current_class_global_variables) {
                 if (g.name.equals(n.getString(0))) {
                     thisP = true; 
                 } 
             }
+        **/
 
-        if (thisP) {
-            w.print("__this->"+var);
-        } else {
+        //look into current Symbol table using the name of the variable to check if it is a local variable. 
+        System.out.println(table.current().lookupLocally(var));
+        if(table.current().lookupLocally(var) == null){     //this returns true if the variable is not a local variable
+            w.print("__this->"+var);    
+        }else {     //else the variable is a local variable
             w.print(var);
         }
         visit(n);
