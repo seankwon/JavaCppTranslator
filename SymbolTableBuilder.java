@@ -613,7 +613,7 @@ public class SymbolTableBuilder extends Visitor {
 
     public String convertString(String str) {
         if (str.equals("String")) {
-            return ("__String*");
+            return ("String");
         } else if (str.equals("long")) {
               return ("signed int65_t");
           } else if (str.equals("int")) {
