@@ -159,7 +159,7 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitThisExpression(GNode n){
-        w.print("this");
+        w.print("__this");
         visit(n);
     }
 
