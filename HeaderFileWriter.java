@@ -117,7 +117,12 @@ public class HeaderFileWriter {
         for (JavaClass c : cl) {
             tempStr += "    struct " + "__" + c.name + " { \n";
             tempStr += "      __" + c.name + "_VT*" + " " + "__vptr;\n\n";
-            tempStr += "      __" + c.name + "(" + c.getCparam_string() +");\n";
+            tempStr += "      __" + c.name + "();\n";
+            if (c.getCparam_string().length() != 0)
+                tempStr += "      static " + c.name + " constructor("+ c.name +", "+ c.getCparam_string() + ");\n";
+            else
+                tempStr += "      static " + c.name + " constructor("+ c.name +");\n";
+
 
             ArrayList sgv = separateJavaGlobalVariables(c);
             ArrayList sm = separateMethods(c);
