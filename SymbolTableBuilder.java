@@ -38,6 +38,7 @@ public class SymbolTableBuilder extends Visitor {
     private boolean isMainMethod = false;
     private boolean hasConstructor = false;
     private boolean isString = false;
+    private boolean notDoneClassVars = false;
     private String currentObject = "";
     private String OUTPUT_FILE_NAME = "main.cc";
 
@@ -73,6 +74,10 @@ public class SymbolTableBuilder extends Visitor {
         writeVTable(current_class.name);
         table.enter(className);
         table.mark(n);
+        if (current_class.globalVars.size() <= 0) {
+            beginInit(current_class.name);
+            endInit();
+        }
         visit(n);
         current_class = null;
         current_class_global_variables = null;
@@ -86,7 +91,6 @@ public class SymbolTableBuilder extends Visitor {
         table.enter(methodName);
         table.mark(n);
         if (findClass(n.getString(3)) == null) {
-            writeInit(current_class.name);
             if (!hasConstructor) {
                 writeConstructor(current_class);
                 w.println("return __this;");
@@ -128,13 +132,9 @@ public class SymbolTableBuilder extends Visitor {
         w.print(methodCalled);
         if (n.isEmpty()) {
             w.print("(" + currentObject + ")");
-            if(isString) {
-                w.print("->data");
-                isString = false; 
-            }
             visit(n);
-        } else if (n.size() == 1){
-            w.print("(");
+        } else if (n.size() == 1) {
+            w.print("("+currentObject+",");
             visit(n);
             w.print(")");
         } else {
@@ -147,19 +147,13 @@ public class SymbolTableBuilder extends Visitor {
     public void visitNewClassExpression(GNode n) {
         String classN = n.getGeneric(2).getString(0);
         //System.out.println(n.getGeneric(3).size());
-        w.print("__"+classN+"::constructor(new __"+classN+"()");
-        if (n.getGeneric(3).size() == 0) {
-            w.print(")");
-            dispatch(n.getGeneric(4));
-        } else {
-            w.print(", ");
+        w.print("__"+classN+"::constructor");
+        currentObject = "new __"+classN+"()";
             visit(n);
-            w.print(")");
-        }
     }
 
     public void visitThisExpression(GNode n){
-        w.print("this");
+        w.print("__this");
         visit(n);
     }
 
@@ -233,10 +227,17 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public final List<Type> visitFieldDeclaration(final GNode n) {
-        if(current_class!= null && current_method!=null){
+        notDoneClassVars = (current_class != null && current_method !=null);
+        if(notDoneClassVars) {
             w.print(convertString(n.getGeneric(1).getGeneric(0).getString(0)) + " ");
             visit(n);
             w.println(";");
+        } else {
+            beginInit(current_class.name);
+            w.print("__this->");
+            visit(n);
+            w.println(";");
+            endInit();
         }
         @SuppressWarnings("unchecked")
             final List<Attribute> modifiers = (List<Attribute>) dispatch(n.getNode(0));
@@ -295,20 +296,11 @@ public class SymbolTableBuilder extends Visitor {
         boolean thisP = false;
         String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
             n.getString(0);
-        /**
-        if (current_class_global_variables != null)
-            for (JavaGlobalVariable g : current_class_global_variables) {
-                if (g.name.equals(n.getString(0))) {
-                    thisP = true; 
-                } 
-            }
-        **/
-
+        boolean scope = isLocalOrParam(table.current().lookup(var).toString());
         //look into current Symbol table using the name of the variable to check if it is a local variable. 
-        System.out.println(table.current().lookupLocally(var));
-        if(table.current().lookupLocally(var) == null){     //this returns true if the variable is not a local variable
+        if(!scope){     //this returns true if the variable is not a local variable
             w.print("__this->"+var);    
-        }else {     //else the variable is a local variable
+        } else {     //else the variable is a local variable
             w.print(var);
         }
         visit(n);
@@ -386,10 +378,13 @@ public class SymbolTableBuilder extends Visitor {
 
     public void visitSelectionExpression(GNode n) {
         if (n.size() == 2) {
-            currentObject = n.getString(1);
+            if (n.getNode(0).hasName("PrimaryIdentifier")) {
+                currentObject = n.getNode(0).getString(0) + "->"+n.getString(1);
+            } else {
+                currentObject = n.getString(1);
+            }
             dispatch(n.getNode(0)); 
             w.print("->");
-
         } else {
             dispatch(n.getNode(0));
             w.print("::");
@@ -609,10 +604,13 @@ public class SymbolTableBuilder extends Visitor {
         w.println("}");
     }
 
-    public void writeInit(String n) {
+    public void beginInit(String n) {
         w.println("__" + n + "::__" + n +"():__vptr(&__vtable){}");
         w.println(n+" __"+n+"::init("+n+" __this) {\n") ;
         w.println("  __Object::init(__this);\n") ;
+    }
+
+    public void endInit() {
         w.println("  return __this;\n") ;
         w.println("}\n\n") ;
     }
@@ -625,6 +623,11 @@ public class SymbolTableBuilder extends Visitor {
             w.print(c.name + " __this) ");
         w.println("{");
         w.println("__this = __" + current_class.name + "::init(__this);");
+    }
+
+    public boolean isLocalOrParam(String s) {
+        String c = s.substring(0, s.indexOf("("));
+        return (c.equals("param") || c.equals("local"));
     }
 
     public String convertString(String str) {

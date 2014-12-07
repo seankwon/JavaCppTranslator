@@ -84,9 +84,6 @@ public class Sentinel extends xtc.util.Tool {
         for (JavaClass c : classes)
             c.setParentFromList(classes);
 
-        for (JavaClass c : classes)
-            System.out.println(c.toString());
-
         hWriter = new HeaderFileWriter(classes);
 
         //System.out.println(hWriter.headerOutput());
