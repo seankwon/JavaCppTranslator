@@ -41,6 +41,7 @@ public class SymbolTableBuilder extends Visitor {
     private boolean notDoneClassVars = false;
     private String currentObject = "";
     private String OUTPUT_FILE_NAME = "main.cc";
+    private String nullCheck = "";
 
     public SymbolTableBuilder(ArrayList<JavaClass> classes, final Runtime runtime, final SymbolTable table) {
         current_class = null;
@@ -87,6 +88,7 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitMethodDeclaration(GNode n) {
+        System.out.println(n.toString());
         String methodName = JavaEntities.methodSymbolFromAst(n);
         table.enter(methodName);
         table.mark(n);
@@ -194,6 +196,7 @@ public class SymbolTableBuilder extends Visitor {
             w.print(convertString(n.getString(0)));
         else{
             w.print(convertString(n.getString(0)) + " = ");
+            nullCheck = n.getString(0);
         }
         visit(n);
     }
@@ -232,10 +235,14 @@ public class SymbolTableBuilder extends Visitor {
             w.print(convertString(n.getGeneric(1).getGeneric(0).getString(0)) + " ");
             visit(n);
             w.println(";");
+            if (nullCheck.length() != 0)
+                w.println("__rt::checkNotNull("+nullCheck+");");
+            nullCheck = "";
         } else {
             beginInit(current_class.name);
             w.print("__this->");
             visit(n);
+            nullCheck = "";
             w.println(";");
             endInit();
         }
