@@ -57,7 +57,6 @@ public class CustomVisitor extends xtc.tree.Visitor {
         // set class Gnode 
         c.implementation = n;
         // get parent name of class
-        pln(n);
         if (n.getGeneric(3) != null)
             c.parentName = (n.getGeneric(3).getGeneric(0).getGeneric(0).getString(0));
         visit(n);
@@ -78,7 +77,7 @@ public class CustomVisitor extends xtc.tree.Visitor {
         // clear methods in order add methods to another class
         methods.clear();
         cparamsList.clear();
-
+        globalVars.clear();
 
     }
     public void visitConstructorDeclaration(GNode n){
