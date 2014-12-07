@@ -17,6 +17,7 @@ public class MethodsWriter {
         writeLastFile();
         writer.println("namespace java {\n");
         writer.println("  namespace lang {\n");
+        writer.println("  using namespace std;\n");
     }
 
     public void print(String s) {writer.print(s);}

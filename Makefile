@@ -17,6 +17,11 @@ define TESTS
 	g++ main.cc && ./a.out
 endef
 
+define EXCEPTIONS
+	java Sentinel tests/Test014.java
+	g++ main.cc && ./a.out
+endef
+
 clean:
 	rm *.class
 
@@ -28,3 +33,6 @@ all:
 
 run:
 	$(TESTS)
+
+exceptions:
+	$(EXCEPTIONS)
