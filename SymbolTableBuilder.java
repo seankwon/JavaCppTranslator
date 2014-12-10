@@ -42,6 +42,7 @@ public class SymbolTableBuilder extends Visitor {
     private String currentObject = "";
     private String OUTPUT_FILE_NAME = "main.cc";
     private String nullCheck = "";
+    private String testClass;
 
     public SymbolTableBuilder(ArrayList<JavaClass> classes, final Runtime runtime, final SymbolTable table) {
         current_class = null;
@@ -89,6 +90,7 @@ public class SymbolTableBuilder extends Visitor {
 
     public void visitMethodDeclaration(GNode n) {
         System.out.println(n.toString());
+        testClass = findTestClass();
         String methodName = JavaEntities.methodSymbolFromAst(n);
         table.enter(methodName);
         table.mark(n);
@@ -300,10 +302,13 @@ public class SymbolTableBuilder extends Visitor {
     }
     public void visitPrimaryIdentifier(GNode n){
         //w.print(n.getString(0));
+        boolean scope = true;
         boolean thisP = false;
         String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
             n.getString(0);
-        boolean scope = isLocalOrParam(table.current().lookup(var).toString());
+
+        if (table.current().lookup(var) != null) 
+            scope = isLocalOrParam(table.current().lookup(var).toString());
         //look into current Symbol table using the name of the variable to check if it is a local variable. 
         if(!scope){     //this returns true if the variable is not a local variable
             w.print("__this->"+var);    
@@ -343,6 +348,7 @@ public class SymbolTableBuilder extends Visitor {
                     w.println("using namespace java::lang;");
                     w.println("using namespace __rt;");
                     w.println("using namespace std;");
+                    w.println(testClass + " t = __" + testClass + "::constructor(new __" + testClass + "());");
                     mainM = true;
                 }
             }
@@ -352,34 +358,43 @@ public class SymbolTableBuilder extends Visitor {
 
     public void visitCallExpression(GNode n) {
         JavaMethod method;
-        if (n.getNode(0) != null) {
-            if (n.getNode(0).hasName("SelectionExpression") && 
-                    n.getNode(0).getNode(0).getString(0).equals("System")) {
-                //Case when method is trying to System.out.println()
-                w.print("cout << "); 
-                if(n.getNode(3).getNode(0).hasName("StringLiteral")) {
-                    w.print(n.getNode(3).getNode(0).getString(0));
-                } else {
-                    visit(n.getNode(3));
-                }
-                if (n.getString(2).equals("println")) {
-                    w.print(" << std::endl");
-                }
+        if (n.getNode(0) == null) {
+            //case when the test class is actually being called
+            int i = 1;
+            currentObject = "t";
+            GNode temp = GNode.create("PrimaryIdentifier", "t");
+            n.set(0, temp);
+            method = findMethodWithinMain(n.getString(2));
+            methodCalled = "->__vptr->"+convertString( n.getString(2) );
+            visit(n);
+            methodCalled = "";
+            method = null;
+        } else if (n.getNode(0).hasName("SelectionExpression") && 
+                n.getNode(0).getNode(0).getString(0).equals("System")) {
+            //Case when method is trying to System.out.println()
+            w.print("cout << "); 
+            if(n.getNode(3).getNode(0).hasName("StringLiteral")) {
+                w.print(n.getNode(3).getNode(0).getString(0));
             } else {
-                int i = 1;
-                if(!n.getNode(0).hasName("SelectionExpression")){
-                    currentObject = n.getNode(0).getString(0);
-                }
-                method = findMethodWithinMain(n.getString(2));
-                methodCalled = "->__vptr->"+convertString( n.getString(2) );
-                // set the following to true when program is trying to print a
-                // string or a method with a string return type
-                isString = (n.getString(2).equals("toString") || (method != null && method.type == "__String*"));
-                visit(n);
-
-                methodCalled = "";
-                method = null;
+                visit(n.getNode(3));
             }
+            if (n.getString(2).equals("println")) {
+                w.print(" << std::endl");
+            }
+        } else {
+            int i = 1;
+            if(!n.getNode(0).hasName("SelectionExpression")){
+                currentObject = n.getNode(0).getString(0);
+            }
+            method = findMethodWithinMain(n.getString(2));
+            methodCalled = "->__vptr->"+convertString( n.getString(2) );
+            // set the following to true when program is trying to print a
+            // string or a method with a string return type
+            isString = (n.getString(2).equals("toString") || (method != null && method.type == "__String*"));
+            visit(n);
+
+            methodCalled = "";
+            method = null;
         }
     }
 
@@ -635,6 +650,14 @@ public class SymbolTableBuilder extends Visitor {
     public boolean isLocalOrParam(String s) {
         String c = s.substring(0, s.indexOf("("));
         return (c.equals("param") || c.equals("local"));
+    }
+
+    public String findTestClass() {
+        for (JavaClass c : classes) {
+            if (c.name.contains("Test")) 
+                return c.name;
+        } 
+        return "";
     }
 
     public String convertString(String str) {
