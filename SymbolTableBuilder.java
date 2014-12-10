@@ -117,7 +117,7 @@ public class SymbolTableBuilder extends Visitor {
             } else {
                 isMainMethod = true;
                 w.println("}}");
-                w.print("int main (){");
+                w.print("int main (int argc, char* argv[]){");
                 visit(n);
                 w.println("}");
                 current_method = null;
@@ -234,7 +234,11 @@ public class SymbolTableBuilder extends Visitor {
     public final List<Type> visitFieldDeclaration(final GNode n) {
         notDoneClassVars = (current_class != null && current_method !=null);
         if(notDoneClassVars) {
-            w.print(convertString(n.getGeneric(1).getGeneric(0).getString(0)) + " ");
+            //checks if field declaration is an array
+            if (checkIfArray(n))
+                printArray(n);
+            else    
+                w.print(convertString(n.getGeneric(1).getGeneric(0).getString(0)) + " ");
             visit(n);
             w.println(";");
             if (nullCheck.length() != 0)
@@ -285,8 +289,10 @@ public class SymbolTableBuilder extends Visitor {
             if (checkNode != null) {
                 if (checkNode.hasName("NewClassExpression"))
                     allVars.put(name, name);
-                else if (checkNode.hasName("PrimaryIdentifier"))
-                    allVars.put(name, allVars.get(checkNode.getString(0)));
+                else if (checkNode.hasName("PrimaryIdentifier")) {
+                    if (allVars.containsKey(checkNode.getString(0)))
+                        allVars.put(name, allVars.get(checkNode.getString(0)));
+                }
             }
 
 
@@ -335,6 +341,13 @@ public class SymbolTableBuilder extends Visitor {
         w.println(";");
     }
 
+    public void visitSubscriptExpression(GNode n) {
+        if (n.getNode(0).hasName("PrimaryIdentifier"))
+            n.getNode(0).set(0,"(*"+n.getNode(0).getString(0)+")[");
+        visit(n);
+        w.print("]");
+    }
+
 
     public void visitFormalParameters(GNode n) {
         int i = 0;
@@ -349,6 +362,10 @@ public class SymbolTableBuilder extends Visitor {
                     w.println("using namespace __rt;");
                     w.println("using namespace std;");
                     w.println(testClass + " t = __" + testClass + "::constructor(new __" + testClass + "());");
+                    w.println("__rt::Ptr<__rt::Array<String> > args = new __rt::Array<String>(argc - 1);");
+
+                    w.println(" for (int32_t i = 1; i < argc; i++) {" );
+                    w.println("(*args)[i - 1] = __rt::literal(argv[i]);\n}");
                     mainM = true;
                 }
             }
@@ -530,6 +547,10 @@ public class SymbolTableBuilder extends Visitor {
         return result;
     }
 
+    public void visitArrayInitializer(GNode n) {
+        visit(n);
+    }
+
     public final Type visitType(final GNode n) {
         final boolean composite = n.getGeneric(0).hasName("QualifiedIdentifier");
         final Object dispatched0 = dispatch(n.getNode(0));
@@ -580,7 +601,7 @@ public class SymbolTableBuilder extends Visitor {
         if (current_method.name.equals("main") && current_method.modifier.equals("public")&& current_method.type.equals("void")){
             isMainMethod = true;
             w.println("}}");
-            w.println("int main (){");
+            w.println("int main (int argc, char* argv[]){");
         } else {
             w.print(current_method.type + " __" + current_class.name + "::" 
                                + current_method.name + "(" + current_class.name + " __this");
@@ -658,6 +679,17 @@ public class SymbolTableBuilder extends Visitor {
                 return c.name;
         } 
         return "";
+    }
+
+    public void printArray(GNode n) {
+        String cn = n.getGeneric(1).getGeneric(0).getString(0);
+        w.print("__rt::Ptr<__rt::Array<" + cn + "> > ");
+    }
+
+    public boolean checkIfArray(GNode n) {
+        return (n.getNode(1) != null &&
+                n.getNode(1).getNode(1) != null &&
+                n.getNode(1).getNode(1).hasName("Dimensions"));
     }
 
     public String convertString(String str) {

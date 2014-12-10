@@ -17,6 +17,10 @@ define TESTS
 	g++ main.cc && ./a.out
 	java Sentinel tests/Test020.java
 	g++ main.cc && ./a.out
+	java Sentinel tests/Test022.java
+	g++ main.cc && ./a.out penis
+	java Sentinel tests/Test023.java
+	g++ main.cc && ./a.out penis
 endef
 
 define EXCEPTIONS
