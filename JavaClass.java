@@ -63,6 +63,14 @@ public class JavaClass {
         return curr;
     }
 
+    public String getParentsConstructors() {
+        ArrayList<JavaClass> p = getParents();
+        StringBuilder temp = new StringBuilder();
+        for (JavaClass c : p) 
+            temp.append(c.constructorBlock + "\n");
+        return temp.toString();
+    }
+
     public boolean isParent() {
         // recursively check if a certain class is a parnet of this Class
         JavaClass curr = parent; 

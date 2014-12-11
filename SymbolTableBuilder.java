@@ -126,7 +126,11 @@ public class SymbolTableBuilder extends Visitor {
         } else {
             hasConstructor = true;
             writeConstructor(current_class);
+            w.constructorWrite = true;
             visit(n);
+            current_class.constructorBlock = w.constructorBlock.toString();
+            w.resetConstructor();
+            w.println(current_class.getParentsConstructors());
             w.println("return __this;");
             w.println("}");
         }
@@ -247,14 +251,10 @@ public class SymbolTableBuilder extends Visitor {
             nullCheck = "";
         } else {
             beginInit(current_class.name);
-            w.constructorWrite = true;
             w.print("__this->");
             visit(n);
             nullCheck = "";
             w.println(";");
-            current_class.constructorBlock = w.constructorBlock.toString();
-            System.out.println(current_class.constructorBlock);
-            w.resetConstructor();
             endInit();
         }
         @SuppressWarnings("unchecked")
