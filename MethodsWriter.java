@@ -38,7 +38,7 @@ public class MethodsWriter {
     public void println(String s) {
         writer.println(s);
         if (constructorWrite) {
-            constructorBlock.append(s);
+            constructorBlock.append(s+"\n");
         }
     }
     public void close() {writer.close(); return;}

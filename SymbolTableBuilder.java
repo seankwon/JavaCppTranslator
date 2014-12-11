@@ -127,10 +127,10 @@ public class SymbolTableBuilder extends Visitor {
             hasConstructor = true;
             writeConstructor(current_class);
             w.constructorWrite = true;
+            w.println(current_class.getParentsConstructors());
             visit(n);
             current_class.constructorBlock = w.constructorBlock.toString();
             w.resetConstructor();
-            w.println(current_class.getParentsConstructors());
             w.println("return __this;");
             w.println("}");
         }
@@ -300,7 +300,6 @@ public class SymbolTableBuilder extends Visitor {
                 }
             }
 
-
             for (Attribute mod : modifiers)
                 entity.addAttribute(mod);
             if (null == table.current().lookupLocally(name)) {
@@ -313,16 +312,19 @@ public class SymbolTableBuilder extends Visitor {
     }
     public void visitPrimaryIdentifier(GNode n){
         //w.print(n.getString(0));
-        boolean scope = true;
+        boolean scope = false;
         boolean thisP = false;
         String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
             n.getString(0);
-
+        System.out.println(var);
         if (table.current().lookup(var) != null) 
             scope = isLocalOrParam(table.current().lookup(var).toString());
         //look into current Symbol table using the name of the variable to check if it is a local variable. 
-        if(!scope){     //this returns true if the variable is not a local variable
-            w.print("__this->"+var);    
+        if(!var.equals("test") && !scope) {     //this returns true if the variable is not a local variable
+            if (isGlobalVar(var))
+                w.print("__this->"+var);
+            else
+                w.print(var);
         } else {     //else the variable is a local variable
             w.print(var);
         }
@@ -366,7 +368,7 @@ public class SymbolTableBuilder extends Visitor {
                     w.println("using namespace java::lang;");
                     w.println("using namespace __rt;");
                     w.println("using namespace std;");
-                    w.println(testClass + " t = __" + testClass + "::constructor(new __" + testClass + "());");
+                    w.println(testClass + " test = __" + testClass + "::constructor(new __" + testClass + "());");
                     w.println("__rt::Ptr<__rt::Array<String> > args = new __rt::Array<String>(argc - 1);");
 
                     w.println(" for (int32_t i = 1; i < argc; i++) {" );
@@ -383,8 +385,8 @@ public class SymbolTableBuilder extends Visitor {
         if (n.getNode(0) == null) {
             //case when the test class is actually being called
             int i = 1;
-            currentObject = "t";
-            GNode temp = GNode.create("PrimaryIdentifier", "t");
+            currentObject = "test";
+            GNode temp = GNode.create("PrimaryIdentifier", "test");
             n.set(0, temp);
             method = findMethodWithinMain(n.getString(2));
             methodCalled = "->__vptr->"+convertString( n.getString(2) );
@@ -695,6 +697,15 @@ public class SymbolTableBuilder extends Visitor {
         return (n.getNode(1) != null &&
                 n.getNode(1).getNode(1) != null &&
                 n.getNode(1).getNode(1).hasName("Dimensions"));
+    }
+
+    public boolean isGlobalVar(String s) {
+        for (JavaClass cl : classes) {
+            for (JavaGlobalVariable g : cl.globalVars)  {
+                if (s.equals(g.name)) return true;
+            }
+        }
+        return false;
     }
 
     public String convertString(String str) {
