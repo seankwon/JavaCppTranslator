@@ -17,6 +17,8 @@ define TESTS
 	g++ main.cc && ./a.out
 	java Sentinel tests/Test009.java
 	g++ main.cc && ./a.out
+	java Sentinel tests/Test010.java
+	g++ main.cc && ./a.out
 	java Sentinel tests/Test019.java
 	g++ main.cc && ./a.out
 	java Sentinel tests/Test020.java

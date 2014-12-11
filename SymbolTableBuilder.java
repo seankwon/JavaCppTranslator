@@ -82,6 +82,7 @@ public class SymbolTableBuilder extends Visitor {
             endInit();
         }
         visit(n);
+        checkConstructors();
         current_class = null;
         current_class_global_variables = null;
         current_method = null;
@@ -96,12 +97,6 @@ public class SymbolTableBuilder extends Visitor {
         table.enter(methodName);
         table.mark(n);
         if (findClass(n.getString(3)) == null) {
-            if (!hasConstructor) {
-                writeConstructor(current_class);
-                w.println("return __this;");
-                w.println("}");
-                hasConstructor = true;
-            }
             if (current_class == null) {
                 current_class_methods = null;
                 current_class_global_variables = null;
@@ -117,6 +112,7 @@ public class SymbolTableBuilder extends Visitor {
                 current_method = null;
             } else {
                 isMainMethod = true;
+                checkConstructors();
                 w.println("}}");
                 w.print("int main (int argc, char* argv[]){");
                 visit(n);
@@ -607,6 +603,7 @@ public class SymbolTableBuilder extends Visitor {
     public void writeMainMethod() {
         if (current_method.name.equals("main") && current_method.modifier.equals("public")&& current_method.type.equals("void")){
             isMainMethod = true;
+            checkConstructors();
             w.println("}}");
             w.println("int main (int argc, char* argv[]){");
         } else {
@@ -706,6 +703,15 @@ public class SymbolTableBuilder extends Visitor {
             }
         }
         return false;
+    }
+
+    public void checkConstructors() {
+        if (!hasConstructor) {
+            writeConstructor(current_class);
+            w.println("return __this;");
+            w.println("}");
+            hasConstructor = true;
+        }
     }
 
     public String convertString(String str) {
