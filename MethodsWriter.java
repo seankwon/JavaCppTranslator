@@ -4,12 +4,15 @@ public class MethodsWriter {
     private final String REF_FILE_ONE = "referenceFiles/objectMethods.ref";
     private final String REF_FILE_TWO = "referenceFiles/arrayMethods.ref";
     private final String OUTPUT_FILE = "main.cc";
+    public boolean constructorWrite;
+    public StringBuilder constructorBlock = new StringBuilder();
     private String output;
     private PrintWriter writer;
 
-    public MethodsWriter() {}
+    public MethodsWriter() {constructorWrite = false;}
     public MethodsWriter(String o) {
         output = o;
+        constructorWrite = false;
         try {
             writer = new PrintWriter(OUTPUT_FILE);
         } catch(Exception e) {}
@@ -20,8 +23,24 @@ public class MethodsWriter {
         writer.println("  using namespace std;\n");
     }
 
-    public void print(String s) {writer.print(s);}
-    public void println(String s) {writer.println(s);}
+    public void print(String s) {
+        writer.print(s);
+        if (constructorWrite) {
+            constructorBlock.append(s);
+        }
+    }
+
+    public void resetConstructor() {
+        constructorBlock.setLength(0);
+        constructorWrite = false;
+    }
+
+    public void println(String s) {
+        writer.println(s);
+        if (constructorWrite) {
+            constructorBlock.append(s);
+        }
+    }
     public void close() {writer.close(); return;}
 
     public String bigInput(String input) {

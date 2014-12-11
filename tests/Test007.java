@@ -1,3 +1,4 @@
+package tests;
 class A {
   String a;
   
