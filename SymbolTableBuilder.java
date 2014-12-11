@@ -39,6 +39,7 @@ public class SymbolTableBuilder extends Visitor {
     private boolean hasConstructor = false;
     private boolean isString = false;
     private boolean notDoneClassVars = false;
+    private StringBuilder constructorCode;
     private String currentObject = "";
     private String OUTPUT_FILE_NAME = "main.cc";
     private String nullCheck = "";
@@ -246,10 +247,14 @@ public class SymbolTableBuilder extends Visitor {
             nullCheck = "";
         } else {
             beginInit(current_class.name);
+            w.constructorWrite = true;
             w.print("__this->");
             visit(n);
             nullCheck = "";
             w.println(";");
+            current_class.constructorBlock = w.constructorBlock.toString();
+            System.out.println(current_class.constructorBlock);
+            w.resetConstructor();
             endInit();
         }
         @SuppressWarnings("unchecked")

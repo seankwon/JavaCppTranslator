@@ -19,10 +19,12 @@ public class JavaClass {
     public GNode implementation; // a structure of the implementation of the Java Class's code
     public ArrayList<JavaGlobalVariable> globalVars; // a list of global variables inside this java class
     public Hashtable<String, String> Cparam;
+    public String constructorBlock;
 
     /* constructors */
     public JavaClass() {
         globalVars = new ArrayList<JavaGlobalVariable>();
+        constructorBlock = "";
     }
     
     public JavaClass(String n, ArrayList<JavaMethod> m, GNode i) {
