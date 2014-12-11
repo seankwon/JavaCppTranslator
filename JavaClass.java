@@ -19,10 +19,12 @@ public class JavaClass {
     public GNode implementation; // a structure of the implementation of the Java Class's code
     public ArrayList<JavaGlobalVariable> globalVars; // a list of global variables inside this java class
     public Hashtable<String, String> Cparam;
+    public String constructorBlock;
 
     /* constructors */
     public JavaClass() {
         globalVars = new ArrayList<JavaGlobalVariable>();
+        constructorBlock = "";
     }
     
     public JavaClass(String n, ArrayList<JavaMethod> m, GNode i) {
@@ -59,6 +61,14 @@ public class JavaClass {
         while (curr.parent != null) 
             curr = curr.parent;
         return curr;
+    }
+
+    public String getParentsConstructors() {
+        ArrayList<JavaClass> p = getParents();
+        StringBuilder temp = new StringBuilder();
+        for (JavaClass c : p) 
+            temp.append(c.constructorBlock + "\n");
+        return temp.toString();
     }
 
     public boolean isParent() {
