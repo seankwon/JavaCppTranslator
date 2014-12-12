@@ -317,7 +317,9 @@ public class SymbolTableBuilder extends Visitor {
             scope = isLocalOrParam(table.current().lookup(var).toString());
         //look into current Symbol table using the name of the variable to check if it is a local variable. 
         if(!var.equals("test") && !scope) {     //this returns true if the variable is not a local variable
-            if (isGlobalVar(var))
+            if (isGlobalFromTest(var))
+                w.print("test->"+var);
+            else if (isGlobalVar(var))
                 w.print("__this->"+var);
             else
                 w.print(var);
@@ -694,6 +696,15 @@ public class SymbolTableBuilder extends Visitor {
         return (n.getNode(1) != null &&
                 n.getNode(1).getNode(1) != null &&
                 n.getNode(1).getNode(1).hasName("Dimensions"));
+    }
+
+    public boolean isGlobalFromTest(String s) {
+        for (JavaClass cl : classes) {
+            for (JavaGlobalVariable g : cl.globalVars)  {
+                if (s.equals(g.name) && cl.name.contains("Test")) return true;
+            }
+        }
+        return false;
     }
 
     public boolean isGlobalVar(String s) {
