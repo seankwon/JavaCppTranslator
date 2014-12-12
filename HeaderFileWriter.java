@@ -202,24 +202,50 @@ public class HeaderFileWriter {
                         continue;
                     tempStr += "      " + m.type + " (*" + m.name + ")(";
                     if(checkOld(m)){
-                        tempStr += m.className;
+                        tempStr += c.name; //m.className;
                         if(m.params.size() != 0)
                             tempStr += ", ";
                     }
                     tempStr += (m.params.size() == 0) ? ");\n" : "";
-
+                    
                     consStr += "        " + m.name + "(";
-                    consStr += "&__" + m.className + "::" + m.name + ")";
+                    if (m.className.equals(c.name)) { // if the method belongs to the current class ... just print it
+                        consStr += "&__" + m.className + "::" + m.name + ")";
+                    } else { // otherwise, we need to make sure it links properly
+
+                        int paramSize = m.params.size();
+                        String paramsString = "";
+
+                        if (paramSize > 1) {
+                            paramsString = ", ";
+                            it = m.params.entrySet().iterator();
+                            it.next(); // skip over the first element as that is already counted for here
+                            while (it.hasNext()) {
+                                Map.Entry<String, String> entry = it.next();
+                                paramsString += entry.getValue();
+                                paramsString += (it.hasNext()) ? ", " : "";
+                            }
+                        }
+
+                        consStr += "(" + m.type + "(*)(" + c.name + paramsString + "))&__" + m.className + "::" + m.name + ")";
+                    }
 
                     //fix final bracket here
                     consStr += (i == c.methods.size()-1) ? "{ " : ", \n";
                     
                     // iterate over params 
+                    int paramsCounter = 0;
                     it = m.params.entrySet().iterator();
                     while (it.hasNext()) {
                         Map.Entry<String, String> entry = it.next();
-                        tempStr += entry.getValue();
+                        if (m.className.equals(c.name)) { // if we are in a method that is owned by the current class, we just print it 
+                            tempStr += entry.getValue();
+                        } else { // otherwise, we must swap out the first arg with the current class name 
+                            tempStr += (paramsCounter == 0) ? c.name : entry.getValue();
+                        }
                         tempStr += (it.hasNext()) ? ", " : ");\n";
+                        //System.out.println("String[" + paramsCounter + "]: " + tempStr);
+                        paramsCounter++;
                     }
                 }
             }
@@ -261,6 +287,7 @@ public class HeaderFileWriter {
 
                     // if this method is new to the table, then add it. 
                     if (checkIfMethodIsNewInTable(currentParentMethod, methods)) { 
+                        currentParentMethod.className = parents.get(i).name; // set the method's "owner"
                         methods.add(currentParentMethod);
                         //System.out.println(currentParentMethod.toString() + currentParentMethod.params.toString());
                     }
