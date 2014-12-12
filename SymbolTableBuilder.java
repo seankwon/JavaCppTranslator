@@ -199,7 +199,8 @@ public class SymbolTableBuilder extends Visitor {
             w.print(convertString(n.getString(0)));
         else{
             w.print(convertString(n.getString(0)) + " = ");
-            nullCheck = n.getString(0);
+            if(n.getNode(2) != null && n.getNode(2).hasName("NewClassExpression"))
+                nullCheck = n.getString(0);
         }
         visit(n);
     }
@@ -208,6 +209,28 @@ public class SymbolTableBuilder extends Visitor {
         int i = 0;
         w.print("for(");
         table.enter(table.freshName("forStatement"));
+        table.mark(n);
+        for (Object o : n) {
+            i++;
+            Node temp = (Node) o;
+            if (temp != null){
+                if (temp.hasName("Block")){
+                    w.println("){");
+                }
+            }
+            if (o instanceof Node) dispatch((Node) o);
+            if (temp != null){
+                if (temp.hasName("Block"))
+                    w.println("}");
+            }
+        }
+        table.exit();
+    }
+
+    public void visitWhileStatement(GNode n) {
+        int i = 0;
+        w.print("while(");
+        table.enter(table.freshName("whileStatement"));
         table.mark(n);
         for (Object o : n) {
             i++;
