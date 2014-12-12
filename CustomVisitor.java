@@ -16,10 +16,12 @@ import xtc.tree.Printer;
 import xtc.tree.Visitor;
 
 public class CustomVisitor extends xtc.tree.Visitor {
+    private int methodCount;
     private ArrayList<JavaClass> classes;
     private ArrayList<JavaMethod> methods;
     private Hashtable<String, String> paramsList;
     private Hashtable<String, String> cparamsList;
+    private Hashtable<String, String> nameMangle;
     private ArrayList<JavaGlobalVariable> globalVars;
     private boolean isClassScope = false;
     private boolean isConstructor = false;
@@ -31,6 +33,7 @@ public class CustomVisitor extends xtc.tree.Visitor {
         paramsList = new Hashtable<String, String>();
         cparamsList = new Hashtable<String, String>();
         globalVars = new ArrayList<JavaGlobalVariable>();
+        methodCount = 0;
     }
 
     public ArrayList<JavaClass> getClasses() {
@@ -74,11 +77,15 @@ public class CustomVisitor extends xtc.tree.Visitor {
         c.globalVars = (tempGlobalVars);
         // add class to list of classes
         classes.add(c);
+        for (JavaMethod m : c.methods) {
+            System.out.println(m.params); 
+        }
+        //System.out.println(c);
         // clear methods in order add methods to another class
         methods.clear();
         cparamsList.clear();
         globalVars.clear();
-
+        methodCount = 0;
     }
     public void visitConstructorDeclaration(GNode n){
         isConstructor = true;
@@ -96,11 +103,19 @@ public class CustomVisitor extends xtc.tree.Visitor {
         // create new objects to initialize
         JavaMethod m = new JavaMethod();
         Hashtable p = new Hashtable<String, String>();
-
         // add method name
-        m.name = (n.getString(3));
+        if (checkIfMethodExists(n.getString(3))) {
+            m.name = (n.getString(3)) + methodCount;
+            n.set(3, n.getString(3)+methodCount);
+            methodCount++;
+        } else {
+            m.name = n.getString(3); 
+        }
         // add method modifier
-        m.modifier = (n.getGeneric(0).getGeneric(0).getString(0));
+        if (n.getGeneric(0).size() == 0)
+            m.modifier = "public";
+        else
+            m.modifier = (n.getGeneric(0).getGeneric(0).getString(0));
         // add implementation
         m.implementation = (n);
         // add method return type
@@ -149,11 +164,22 @@ public class CustomVisitor extends xtc.tree.Visitor {
         visit(n);
     }
 
+    public void visitCallExpression(GNode n) {
+        visit(n);
+    }
+
     public void visit(Node n) {
         for (Object o : n) {
             // visit the nearest instance of a node 
             if (o instanceof Node) dispatch((Node) o);
         }
+    }
+
+    public boolean checkIfMethodExists(String name) {
+        for (JavaMethod m : methods) {
+            if (m.name.equals(name)) return true;
+        }
+        return false;
     }
 
     public String convertString(String str) {
