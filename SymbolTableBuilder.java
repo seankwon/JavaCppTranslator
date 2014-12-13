@@ -92,7 +92,6 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitMethodDeclaration(GNode n) {
-        //System.out.println(n.toString());
         testClass = findTestClass();
         String methodName = JavaEntities.methodSymbolFromAst(n);
         table.enter(methodName);
@@ -349,7 +348,6 @@ public class SymbolTableBuilder extends Visitor {
         boolean thisP = false;
         String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
             n.getString(0);
-        //System.out.println(var);
         if (table.current().lookup(var) != null) 
             scope = isLocalOrParam(table.current().lookup(var).toString());
         //look into current Symbol table using the name of the variable to check if it is a local variable. 
