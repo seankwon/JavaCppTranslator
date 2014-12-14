@@ -781,6 +781,8 @@ public class SymbolTableBuilder extends Visitor {
               return ("bool");
           } else if (str.equals("final")) {
               return ("const");
+          } else if (str.equals("byte")){
+              return "unsigned char";
           } else {
               return str; 
           }

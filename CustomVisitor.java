@@ -163,7 +163,6 @@ public class CustomVisitor extends xtc.tree.Visitor {
 
     public void visitFieldDeclaration(GNode n) {
         FoundTypes.put(n.getNode(2).getNode(0).getString(0), n.getNode(1).getNode(0).getString(0));
-        System.out.println(FoundTypes);
         if (isClassScope) {
             JavaGlobalVariable globalVariable = new JavaGlobalVariable();
             globalVariable.name = (n.getGeneric(2).getGeneric(0).getString(0));
@@ -187,39 +186,61 @@ public class CustomVisitor extends xtc.tree.Visitor {
             Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, ArrayList<String>> entry = it.next();
-                if (entry.getValue().equals(argsList)){
+                if (entry.getValue().equals(argsList)) {
                     n.set(2, entry.getKey());
                     break;
                 } else {
-                    if (checkcl(entry.getValue(), n)) n.set(2, entry.getKey());
+                    if (checkcl(argsList, entry.getValue())) {
+                        n.set(2, entry.getKey());
+                    }
                 }
             }  
-        
         }
         visit(n);
     }
 
-    public boolean checkcl(ArrayList<String> argsList, GNode n) {
+    public JavaClass findClass(String s) {
+        for (JavaClass c : classes) 
+            if (c.name.equals(s))
+                return c;
+        return null;
+    }
+
+    public boolean checkcl(ArrayList<String> argsList, ArrayList<String> curr) {
         boolean checker = false;
+        JavaClass c = null;
+        if (curr.size() != argsList.size()) {
+            return checker;
+        }
+
         for (int i = 0; i < argsList.size(); i++) {
-            for (JavaClass cl : classes) {
-                if (cl.name.equals(argsList.get(i))) {
-                    if (i == argsList.size()-1) {
+            c = findClass(argsList.get(i));
+            if (c == null) {
+                return false;
+            } else {
+                String cl = (findClass(curr.get(i)) == null) ? "Object" : (findClass(curr.get(i)).name);
+                if (c.name.equals(cl)) {
+                    if (argsList.size()-1 == i) {
                         checker = true;
-                        break;
-                    } 
-                } else {
-                    for (JavaClass p : cl.getParents()) {
-                        if (p.name.equals(argsList.get(i))) {
-                            if (i == argsList.size()-1){
-                                checker = true;
-                                break;
-                            }
-                        }
+                        return checker;
+                    } else if (i == 0) {
+                        continue;
                     }
+                }
+
+                if ((cl != null && c.hasParentOf(cl)) || (c != null && cl.equals("Object"))) {
+                    if (argsList.size()-1 == i) {
+                        checker = true;
+                        return checker;
+                    } else if (i == 0) {
+                        continue;
+                    }
+                } else {
+                    return checker; 
                 }
             }
         }
+
         return checker; 
     }
 
@@ -234,6 +255,7 @@ public class CustomVisitor extends xtc.tree.Visitor {
                     Map.Entry<String, ArrayList<String>> entry = it.next();
                     if (i < entry.getValue().size() && entry.getValue().get(i).equals(id)) {
                         n.add(entry.getValue().get(i));
+                        if (args.size() == 1) return n;
                     }
                 }  
             } else if (args.getNode(i).hasName("FloatingPointLiteral")) {
