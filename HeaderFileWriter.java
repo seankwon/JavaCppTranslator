@@ -213,7 +213,6 @@ public class HeaderFileWriter {
                         it = m.params.entrySet().iterator();
                         tempStr += checkOld(m) ? "" : c.name;
                         while (it.hasNext()) {
-                            //System.out.println("String: " + tempStr);
                             Map.Entry<String, String> entry = it.next();
                             if (paramsCounter == 0) {
                                 if (!entry.getValue().equals("Object")) {
@@ -256,11 +255,6 @@ public class HeaderFileWriter {
                             paramsCounter++;
                         }
                     
-
-                    //System.out.println("Params Section: " + paramsString);
-
-
-
                         consStr += "(" + m.type + "(*)(" + c.name + paramsString + "))&__" + m.className + "::" + m.name + ")";
                     }
 

@@ -182,27 +182,89 @@ public class CustomVisitor extends xtc.tree.Visitor {
     public void visitCallExpression(GNode n) {
         //node 3
         GNode args = n.getGeneric(3);
-        System.out.println(nm);
-        if (n.getNode(3).getNode(0) != null && n.getNode(3).getNode(0).hasName("PrimaryIdentifier")) {
-            // method with 1 argument
-            String id = FoundTypes.get(n.getNode(3).getNode(0).getString(0));
+        ArrayList<String> argsList = (nameMangle(args));
+        if (argsList.size() > 0) {
             Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, ArrayList<String>> entry = it.next();
-                if (entry.getValue().get(0).equals(id)) {
+                if (entry.getValue().equals(argsList)){
                     n.set(2, entry.getKey());
+                    break;
+                } else {
+                    if (checkcl(entry.getValue(), n)) n.set(2, entry.getKey());
                 }
             }  
-        } else if (args.getNode(0).hasName("FloatingPointLiteral")) {
-            Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<String, ArrayList<String>> entry = it.next();
-                if (entry.getValue().get(0).equals("double") || entry.getValue().get(0).equals("float")) {
-                    n.set(2, entry.getKey());
-                }
-            }  
+        
         }
         visit(n);
+    }
+
+    public boolean checkcl(ArrayList<String> argsList, GNode n) {
+        boolean checker = false;
+        for (int i = 0; i < argsList.size(); i++) {
+            for (JavaClass cl : classes) {
+                if (cl.name.equals(argsList.get(i))) {
+                    if (i == argsList.size()-1) {
+                        checker = true;
+                        break;
+                    } 
+                } else {
+                    for (JavaClass p : cl.getParents()) {
+                        if (p.name.equals(argsList.get(i))) {
+                            if (i == argsList.size()-1){
+                                checker = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return checker; 
+    }
+
+    public ArrayList<String> nameMangle(GNode args) {
+        ArrayList<String> n = new ArrayList<String>();
+        for (int i = 0; i < args.size(); i++) {
+            if (args.getNode(i) != null && args.getNode(i).hasName("PrimaryIdentifier")) {
+                // method with 1 argument
+                String id = FoundTypes.get(args.getNode(i).getString(0));
+                Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<String, ArrayList<String>> entry = it.next();
+                    if (i < entry.getValue().size() && entry.getValue().get(i).equals(id)) {
+                        n.add(entry.getValue().get(i));
+                    }
+                }  
+            } else if (args.getNode(i).hasName("FloatingPointLiteral")) {
+                Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<String, ArrayList<String>> entry = it.next();
+                    if (i < entry.getValue().size() && entry.getValue().get(i).equals("double") || entry.getValue().get(0).equals("float")) {
+                        n.add(entry.getValue().get(i));
+                    }
+                }  
+            } else if (args.getNode(i).hasName("NewClassExpression")) {
+                String id = args.getNode(i).getNode(2).getString(0);
+                Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<String, ArrayList<String>> entry = it.next();
+                    if (i < entry.getValue().size() && entry.getValue().get(i).equals(id)) {
+                        n.add(entry.getValue().get(i));
+                    }
+                }  
+            } else if (args.getNode(i).hasName("CastExpression")) {
+                String id = args.getNode(i).getNode(0).getNode(0).getString(0);
+                Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<String, ArrayList<String>> entry = it.next();
+                    if (i < entry.getValue().size() && entry.getValue().get(i).equals(id)) {
+                        n.add(entry.getValue().get(i));
+                    }
+                }  
+            }
+        }
+        return n;
     }
 
     public void visit(Node n) {
