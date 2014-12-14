@@ -44,6 +44,7 @@ public class SymbolTableBuilder extends Visitor {
     private String OUTPUT_FILE_NAME = "main.cc";
     private String nullCheck = "";
     private String testClass;
+    private String cn;
 
     public SymbolTableBuilder(ArrayList<JavaClass> classes, final Runtime runtime, final SymbolTable table) {
         current_class = null;
@@ -205,6 +206,14 @@ public class SymbolTableBuilder extends Visitor {
         visit(n);
     }
 
+    public void visitNewArrayExpression(GNode n){
+
+        System.out.println("poop sauce\n" + n.toString());
+        w.print("new __rt::Array<" + cn + ">(");
+        visit(n);
+        w.print(")");
+    } 
+
     public void visitForStatement(GNode n) {
         int i = 0;
         w.print("for(");
@@ -261,6 +270,10 @@ public class SymbolTableBuilder extends Visitor {
             //checks if field declaration is an array
             if (checkIfArray(n)){
                 printArray(n);
+               // System.out.println("diap:\n" + n.toString());
+                //System.out.println(n.getNode(2).toString());
+               // visit(n.getNode(2));
+             //   return null;
             }
             else    
                 w.print(convertString(n.getGeneric(1).getGeneric(0).getString(0)) + " ");
@@ -718,7 +731,7 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void printArray(GNode n) {
-        String cn = n.getGeneric(1).getGeneric(0).getString(0);
+        cn = n.getGeneric(1).getGeneric(0).getString(0);
         w.print("__rt::Ptr<__rt::Array<" + cn + ">,__rt::array_policy> ");
     }
 
