@@ -259,8 +259,9 @@ public class SymbolTableBuilder extends Visitor {
         notDoneClassVars = (current_class != null && current_method !=null);
         if(notDoneClassVars) {
             //checks if field declaration is an array
-            if (checkIfArray(n))
+            if (checkIfArray(n)){
                 printArray(n);
+            }
             else    
                 w.print(convertString(n.getGeneric(1).getGeneric(0).getString(0)) + " ");
             visit(n);
@@ -368,10 +369,7 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitSubscriptExpression(GNode n) {
-        if (n.getNode(0).hasName("PrimaryIdentifier"))
-            n.getNode(0).set(0,"(*"+n.getNode(0).getString(0)+")[");
-        visit(n);
-        w.print("]");
+        w.print(n.getNode(0).getString(0) + "[" + n.getNode(1).getString(0) + "]");
     }
 
 
@@ -388,7 +386,7 @@ public class SymbolTableBuilder extends Visitor {
                     w.println("using namespace __rt;");
                     w.println("using namespace std;");
                     w.println(testClass + " test = __" + testClass + "::constructor(new __" + testClass + "());");
-                    w.println("__rt::Ptr<__rt::Array<String> > args = new __rt::Array<String>(argc - 1);");
+                    w.println("__rt::Ptr<__rt::Array<String>, __rt::array_policy> args = new __rt::Array<String>(argc - 1);");
 
                     w.println(" for (int32_t i = 1; i < argc; i++) {" );
                     w.println("(*args)[i - 1] = __rt::literal(argv[i]);\n}");
@@ -424,11 +422,22 @@ public class SymbolTableBuilder extends Visitor {
             if (n.getString(2).equals("println")) {
                 w.print(" << std::endl");
             }
-        } else {
+        } else if (n.getNode(0).hasName("SubscriptExpression")) {
+            for (Object o : n) {
+                if (o instanceof Node){
+                    Node p = (Node) o;
+                    if(p.hasName("Arguments")){
+                        break;
+                    }
+                    dispatch((Node) o);
+                }
+            }
+        }else {
             int i = 1;
+            //System.out.println(n.getNode(0).toString());
             if(!n.getNode(0).hasName("SelectionExpression")){
                 currentObject = n.getNode(0).getString(0);
-            }
+            }            
             method = findMethodWithinMain(n.getString(2));
             methodCalled = "->__vptr->"+convertString( n.getString(2) );
             // set the following to true when program is trying to print a
@@ -710,7 +719,7 @@ public class SymbolTableBuilder extends Visitor {
 
     public void printArray(GNode n) {
         String cn = n.getGeneric(1).getGeneric(0).getString(0);
-        w.print("__rt::Ptr<__rt::Array<" + cn + "> > ");
+        w.print("__rt::Ptr<__rt::Array<" + cn + ">,__rt::array_policy> ");
     }
 
     public boolean checkIfArray(GNode n) {

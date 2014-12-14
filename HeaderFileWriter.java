@@ -395,12 +395,12 @@ public class HeaderFileWriter {
         output+="    struct __Class;\n";
         output+="    struct __Class_VT;\n\n";
 
-        output+="    typedef __rt::Ptr<__Object> Object;\n";
-        output+="    typedef __rt::Ptr<__Class> Class;\n";
-        output+="    typedef __rt::Ptr<__String> String;\n";
+        output+="    typedef __rt::Ptr<__Object, __rt::object_policy> Object;\n";
+        output+="    typedef __rt::Ptr<__Class, __rt::object_policy> Class;\n";
+        output+="    typedef __rt::Ptr<__String, __rt::object_policy> String;\n";
 
         for (JavaClass c : classes) {
-            output += "    typedef __rt::Ptr<__" + c.name + "> " + c.name + ";\n";
+            output += "    typedef __rt::Ptr<__" + c.name + ", __rt::object_policy> " + c.name + ";\n";
         }
 
         output += "  }\n";
