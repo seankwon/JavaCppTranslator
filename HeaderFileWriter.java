@@ -201,26 +201,69 @@ public class HeaderFileWriter {
                     if(m.name.equals("main"))
                         continue;
                     tempStr += "      " + m.type + " (*" + m.name + ")(";
-                    if(checkOld(m)){
-                        tempStr += m.className;
-                        if(m.params.size() != 0)
-                            tempStr += ", ";
+                    if(checkOld(m)) {
+                        tempStr += c.name; //m.className;
+                        //if(m.params.size() != 0)
+                        //    tempStr += ", ";
                     }
                     tempStr += (m.params.size() == 0) ? ");\n" : "";
+                    
+                    if (m.params.size() > 0) {
+                        int paramsCounter = 0;
+                        it = m.params.entrySet().iterator();
+                        tempStr += checkOld(m) ? "" : c.name;
+                        while (it.hasNext()) {
+                            System.out.println("String: " + tempStr);
+                            Map.Entry<String, String> entry = it.next();
+                            if (paramsCounter == 0) {
+                                if (!entry.getValue().equals("Object")) {
+                                    tempStr += ", " + entry.getValue();
+                                }
+                            } else {
+                                tempStr += ", " + entry.getValue();
+                            }
+                            tempStr += (it.hasNext()) ? "" : ");\n";
+                            paramsCounter++;
+                        }
+                    }
 
+
+                    
                     consStr += "        " + m.name + "(";
-                    consStr += "&__" + m.className + "::" + m.name + ")";
+                    if (m.className.equals(c.name)) { // if the method belongs to the current class ... just print it
+                        consStr += "&__" + m.className + "::" + m.name + ")";
+                    } else { // otherwise, we need to make sure it links properly
+
+                        int paramSize = m.params.size();
+                        String paramsString = "";
+
+
+                        int paramsCounter = 0;
+                        it = m.params.entrySet().iterator();
+                        while (it.hasNext()) {
+                            Map.Entry<String, String> entry = it.next();
+                            if (paramsCounter == 0) {
+                                if (!entry.getValue().equals("Object")) {
+                                    paramsString += ", " + entry.getValue();
+                                }
+                            } else {
+                                paramsString += ", " + entry.getValue();
+                            }
+                            paramsCounter++;
+                        }
+                    
+
+                    System.out.println("Params Section: " + paramsString);
+
+
+
+                        consStr += "(" + m.type + "(*)(" + c.name + paramsString + "))&__" + m.className + "::" + m.name + ")";
+                    }
 
                     //fix final bracket here
                     consStr += (i == c.methods.size()-1) ? "{ " : ", \n";
                     
-                    // iterate over params 
-                    it = m.params.entrySet().iterator();
-                    while (it.hasNext()) {
-                        Map.Entry<String, String> entry = it.next();
-                        tempStr += entry.getValue();
-                        tempStr += (it.hasNext()) ? ", " : ");\n";
-                    }
+                    
                 }
             }
 
@@ -261,6 +304,8 @@ public class HeaderFileWriter {
 
                     // if this method is new to the table, then add it. 
                     if (checkIfMethodIsNewInTable(currentParentMethod, methods)) { 
+                        //System.out.println("Setting class name from " + currentParentMethod.className + " to " + parents.get(i).name);
+                        //currentParentMethod.className = parents.get(i).name; // set the method's "owner"
                         methods.add(currentParentMethod);
                         //System.out.println(currentParentMethod.toString() + currentParentMethod.params.toString());
                     }
