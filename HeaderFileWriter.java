@@ -207,7 +207,7 @@ public class HeaderFileWriter {
                         //    tempStr += ", ";
                     }
                     tempStr += (m.params.size() == 0) ? ");\n" : "";
-                    
+
                     if (m.params.size() > 0) {
                         int paramsCounter = 0;
                         it = m.params.entrySet().iterator();

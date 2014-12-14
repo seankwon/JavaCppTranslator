@@ -30,6 +30,7 @@ public class CustomVisitor extends xtc.tree.Visitor {
     private boolean isClassScope = false;
     private boolean isConstructor = false;
     private String class_name;
+    private int currscore;
 
     public CustomVisitor() {
         classes = new ArrayList<JavaClass>();
@@ -209,6 +210,7 @@ public class CustomVisitor extends xtc.tree.Visitor {
     public boolean checkcl(ArrayList<String> argsList, ArrayList<String> curr) {
         boolean checker = false;
         JavaClass c = null;
+        int tempscore = 0;
         if (curr.size() != argsList.size()) {
             return checker;
         }
@@ -220,8 +222,12 @@ public class CustomVisitor extends xtc.tree.Visitor {
             } else {
                 String cl = (findClass(curr.get(i)) == null) ? "Object" : (findClass(curr.get(i)).name);
                 if (c.name.equals(cl)) {
+                    tempscore++;
                     if (argsList.size()-1 == i) {
-                        checker = true;
+                        if (tempscore >= currscore){
+                            currscore = tempscore; 
+                            checker = true;
+                        }
                         return checker;
                     } else if (i == 0) {
                         continue;
@@ -230,7 +236,10 @@ public class CustomVisitor extends xtc.tree.Visitor {
 
                 if ((cl != null && c.hasParentOf(cl)) || (c != null && cl.equals("Object"))) {
                     if (argsList.size()-1 == i) {
-                        checker = true;
+                        if (tempscore >= currscore){
+                            currscore = tempscore; 
+                            checker = true;
+                        }
                         return checker;
                     } else if (i == 0) {
                         continue;
@@ -282,8 +291,9 @@ public class CustomVisitor extends xtc.tree.Visitor {
                     Map.Entry<String, ArrayList<String>> entry = it.next();
                     if (i < entry.getValue().size() && entry.getValue().get(i).equals(id)) {
                         n.add(entry.getValue().get(i));
+                        if (args.size() == 1) return n;
                     }
-                }  
+                }
             }
         }
         return n;
