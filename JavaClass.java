@@ -71,6 +71,17 @@ public class JavaClass {
         return temp.toString();
     }
 
+    public boolean hasParentOf(String s) {
+        JavaClass curr = parent; 
+        while (curr != null) {
+            if (curr != null && curr.name.equals(s))
+                return true;
+            else 
+                curr = curr.parent;
+        }
+        return false; 
+    }
+
     public boolean isParent() {
         // recursively check if a certain class is a parnet of this Class
         JavaClass curr = parent; 

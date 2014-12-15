@@ -207,13 +207,12 @@ public class HeaderFileWriter {
                         //    tempStr += ", ";
                     }
                     tempStr += (m.params.size() == 0) ? ");\n" : "";
-                    
+
                     if (m.params.size() > 0) {
                         int paramsCounter = 0;
                         it = m.params.entrySet().iterator();
                         tempStr += checkOld(m) ? "" : c.name;
                         while (it.hasNext()) {
-                            //System.out.println("String: " + tempStr);
                             Map.Entry<String, String> entry = it.next();
                             if (paramsCounter == 0) {
                                 if (!entry.getValue().equals("Object")) {
@@ -256,11 +255,6 @@ public class HeaderFileWriter {
                             paramsCounter++;
                         }
                     
-
-                    //System.out.println("Params Section: " + paramsString);
-
-
-
                         consStr += "(" + m.type + "(*)(" + c.name + paramsString + "))&__" + m.className + "::" + m.name + ")";
                     }
 

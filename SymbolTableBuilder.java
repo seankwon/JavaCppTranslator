@@ -39,6 +39,8 @@ public class SymbolTableBuilder extends Visitor {
     private boolean hasConstructor = false;
     private boolean isString = false;
     private boolean notDoneClassVars = false;
+    private boolean fromNewClassExpression = false;
+    private boolean fromArgs = false;
     private StringBuilder constructorCode;
     private String currentObject = "";
     private String OUTPUT_FILE_NAME = "main.cc";
@@ -92,7 +94,7 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitMethodDeclaration(GNode n) {
-        //System.out.println(n.toString());
+        System.out.println(n);
         testClass = findTestClass();
         String methodName = JavaEntities.methodSymbolFromAst(n);
         table.enter(methodName);
@@ -135,7 +137,10 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitArguments(GNode n) {
-        w.print(methodCalled);
+        fromArgs = true;
+        if (!fromNewClassExpression) {
+            w.print(methodCalled);
+        }
         if (n.isEmpty()) {
             w.print("(" + currentObject + ")");
             visit(n);
@@ -145,17 +150,24 @@ public class SymbolTableBuilder extends Visitor {
             w.print(")");
         } else {
             w.print("(" + currentObject + ",");
-            visit2(n, ",");
+            visit3(n, ",");
             w.print(")");
         }
+        fromArgs = false;
     }
 
     public void visitNewClassExpression(GNode n) {
         String classN = n.getGeneric(2).getString(0);
         //System.out.println(n.getGeneric(3).size());
-        w.print("__"+classN+"::constructor");
-        currentObject = "new __"+classN+"()";
-            visit(n);
+        if (!fromArgs) {
+            w.print("__"+classN+"::constructor");
+            currentObject = "new __"+classN+"()";
+        } else {
+            currentObject = "new __"+classN+"()";
+            fromNewClassExpression = true;
+        }
+        visit(n);
+        fromNewClassExpression = false;
     }
 
     public void visitThisExpression(GNode n){
@@ -349,12 +361,13 @@ public class SymbolTableBuilder extends Visitor {
         boolean thisP = false;
         String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
             n.getString(0);
-        //System.out.println(var);
         if (table.current().lookup(var) != null) 
             scope = isLocalOrParam(table.current().lookup(var).toString());
         //look into current Symbol table using the name of the variable to check if it is a local variable. 
         if(!var.equals("test") && !scope) {     //this returns true if the variable is not a local variable
-            if (isGlobalVar(var))
+            if (isGlobalFromTest(var))
+                w.print("test->"+var);
+            else if (isGlobalVar(var))
                 w.print("__this->"+var);
             else
                 w.print(var);
@@ -455,7 +468,6 @@ public class SymbolTableBuilder extends Visitor {
             methodCalled = "->__vptr->"+convertString( n.getString(2) );
             // set the following to true when program is trying to print a
             // string or a method with a string return type
-            isString = (n.getString(2).equals("toString") || (method != null && method.type == "__String*"));
             visit(n);
 
             methodCalled = "";
@@ -680,6 +692,15 @@ public class SymbolTableBuilder extends Visitor {
         }
     }
 
+    public void visit3(GNode n, String s){
+        int i = 1;
+        for (Object o : n) {
+            i++;
+            if (o instanceof Node) dispatch((Node) o);
+            if (i <= n.size()) w.print(s);
+        }
+    }
+
     public void visit(Node n) {
         for (Object o : n) {
             // visit the nearest instance of a node 
@@ -741,6 +762,15 @@ public class SymbolTableBuilder extends Visitor {
                 n.getNode(1).getNode(1).hasName("Dimensions"));
     }
 
+    public boolean isGlobalFromTest(String s) {
+        for (JavaClass cl : classes) {
+            for (JavaGlobalVariable g : cl.globalVars)  {
+                if (s.equals(g.name) && cl.name.contains("Test")) return true;
+            }
+        }
+        return false;
+    }
+
     public boolean isGlobalVar(String s) {
         for (JavaClass cl : classes) {
             for (JavaGlobalVariable g : cl.globalVars)  {
@@ -772,6 +802,8 @@ public class SymbolTableBuilder extends Visitor {
               return ("bool");
           } else if (str.equals("final")) {
               return ("const");
+          } else if (str.equals("byte")){
+              return "unsigned char";
           } else {
               return str; 
           }
