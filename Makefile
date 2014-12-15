@@ -38,9 +38,9 @@ define TESTS
 	java Sentinel tests/Test025.java
 	g++ main.cc && ./a.out
 	java Sentinel tests/Test032.java
-	g++ main.cc && ./a.out
+	g++ main.cc && ./a.out DONE
 	java Sentinel tests/Test033.java
-	g++ main.cc && ./a.out
+	g++ main.cc && ./a.out DONE
 	java Sentinel tests/Test034.java
 	g++ main.cc && ./a.out
 	java Sentinel tests/Test035.java
