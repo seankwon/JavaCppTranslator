@@ -94,7 +94,6 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitMethodDeclaration(GNode n) {
-        System.out.println(n);
         testClass = findTestClass();
         String methodName = JavaEntities.methodSymbolFromAst(n);
         table.enter(methodName);
@@ -220,7 +219,6 @@ public class SymbolTableBuilder extends Visitor {
 
     public void visitNewArrayExpression(GNode n){
 
-        System.out.println("poop sauce\n" + n.toString());
         w.print("new __rt::Array<" + cn + ">(");
         visit(n);
         w.print(")");
@@ -361,6 +359,9 @@ public class SymbolTableBuilder extends Visitor {
         boolean thisP = false;
         String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
             n.getString(0);
+        for (JavaClass c : classes)
+            if (var.equals(c.name))
+                var = c.name.toLowerCase();
         if (table.current().lookup(var) != null) 
             scope = isLocalOrParam(table.current().lookup(var).toString());
         //look into current Symbol table using the name of the variable to check if it is a local variable. 
@@ -463,6 +464,9 @@ public class SymbolTableBuilder extends Visitor {
             //System.out.println(n.getNode(0).toString());
             if(!n.getNode(0).hasName("SelectionExpression")){
                 currentObject = n.getNode(0).getString(0);
+                for (JavaClass c : classes)
+                    if (currentObject.equals(c.name))
+                        currentObject = c.name.toLowerCase();
             }            
             method = findMethodWithinMain(n.getString(2));
             methodCalled = "->__vptr->"+convertString( n.getString(2) );
