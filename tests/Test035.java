@@ -1,3 +1,4 @@
+package tests;
 class A {
   int m(byte b) { System.out.println("A.m(byte)"); return b; }
   void m(double d) { System.out.println("A.m(double)"); }

@@ -29,7 +29,6 @@ public class SymbolTableBuilder extends Visitor {
     final private Runtime runtime;
     public MethodsWriter w;
     private ArrayList<JavaClass> classes;
-    private Hashtable<String, String> allVars = new Hashtable<String, String>();
     private JavaClass current_class;
     private JavaMethod current_method;
     private ArrayList<JavaMethod> current_class_methods;
@@ -42,6 +41,7 @@ public class SymbolTableBuilder extends Visitor {
     private boolean fromNewClassExpression = false;
     private boolean fromArgs = false;
     private boolean inLoop = false;
+    private boolean doneCons = false;
     private StringBuilder constructorCode;
     private String currentObject = "";
     private String OUTPUT_FILE_NAME = "main.cc";
@@ -82,11 +82,13 @@ public class SymbolTableBuilder extends Visitor {
         writeVTable(current_class.name);
         table.enter(className);
         table.mark(n);
-        if (current_class.globalVars.size() <= 0) {
+        if (current_class.globalVars.size() <= 0 && !doneCons) {
             beginInit(current_class.name);
             endInit();
+            doneCons = true;
         }
         visit(n);
+        doneCons = false;
         checkConstructors();
         current_class = null;
         current_class_global_variables = null;
@@ -96,9 +98,13 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitMethodDeclaration(GNode n) {
-        System.out.println(n);
         testClass = findTestClass();
         String methodName = JavaEntities.methodSymbolFromAst(n);
+        if (!doneCons) {
+            beginInit(current_class.name);
+            endInit();
+            doneCons = true;
+        }
         table.enter(methodName);
         table.mark(n);
         if (findClass(n.getString(3)) == null) {
@@ -283,13 +289,8 @@ public class SymbolTableBuilder extends Visitor {
     public final List<Type> visitFieldDeclaration(final GNode n) {
         notDoneClassVars = (current_class != null && current_method !=null);
         if(notDoneClassVars) {
-            //checks if field declaration is an array
             if (checkIfArray(n)){
                 printArray(n);
-               // System.out.println("diap:\n" + n.toString());
-                //System.out.println(n.getNode(2).toString());
-               // visit(n.getNode(2));
-             //   return null;
             }
             else    
                 w.print(convertString(n.getGeneric(1).getGeneric(0).getString(0)) + " ");
@@ -299,12 +300,15 @@ public class SymbolTableBuilder extends Visitor {
                 w.println("__rt::checkNotNull("+nullCheck+");");
             nullCheck = "";
         } else {
-            beginInit(current_class.name);
-            w.print("__this->");
-            visit(n);
-            nullCheck = "";
-            w.println(";");
-            endInit();
+            if (!doneCons) {
+                beginInit(current_class.name);
+                w.print("__this->");
+                visit(n);
+                nullCheck = "";
+                w.println(";");
+                endInit();
+                doneCons = true;
+            }
         }
         @SuppressWarnings("unchecked")
             final List<Attribute> modifiers = (List<Attribute>) dispatch(n.getNode(0));
@@ -340,14 +344,6 @@ public class SymbolTableBuilder extends Visitor {
                                                            countDimensions(declNode.getGeneric(1)));
             Type entity = isLocal ? VariableT.newLocal(dimType, name) : 
                 VariableT.newField(dimType, name);
-            if (checkNode != null) {
-                if (checkNode.hasName("NewClassExpression"))
-                    allVars.put(name, name);
-                else if (checkNode.hasName("PrimaryIdentifier")) {
-                    if (allVars.containsKey(checkNode.getString(0)))
-                        allVars.put(name, allVars.get(checkNode.getString(0)));
-                }
-            }
 
             for (Attribute mod : modifiers)
                 entity.addAttribute(mod);
@@ -363,8 +359,10 @@ public class SymbolTableBuilder extends Visitor {
         //w.print(n.getString(0));
         boolean scope = false;
         boolean thisP = false;
-        String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
-            n.getString(0);
+        String var = n.getString(0);
+        for (JavaClass c : classes)
+            if (var.equals(c.name))
+                var = c.name.toLowerCase();
         if (table.current().lookup(var) != null) 
             scope = isLocalOrParam(table.current().lookup(var).toString());
         //look into current Symbol table using the name of the variable to check if it is a local variable. 
@@ -433,6 +431,10 @@ public class SymbolTableBuilder extends Visitor {
 
     public void visitCallExpression(GNode n) {
         JavaMethod method;
+        if (n.getString(2) != null &&n.getString(2).equals("super")) {
+            visit(n);
+            return;
+        }
         if (n.getNode(0) == null) {
             //case when the test class is actually being called
             int i = 1;
@@ -474,6 +476,9 @@ public class SymbolTableBuilder extends Visitor {
             //System.out.println(n.getNode(0).toString());
             if(!n.getNode(0).hasName("SelectionExpression")){
                 currentObject = n.getNode(0).getString(0);
+                for (JavaClass c : classes)
+                    if (currentObject.equals(c.name))
+                        currentObject = c.name.toLowerCase();
             }            
             method = findMethodWithinMain(n.getString(2));
             methodCalled = "->__vptr->"+convertString( n.getString(2) );

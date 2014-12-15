@@ -267,6 +267,20 @@ public class CustomVisitor extends xtc.tree.Visitor {
                         if (args.size() == 1) return n;
                     }
                 }  
+            } else if (args.getNode(i).hasName("AdditiveExpression")) {
+                String id = FoundTypes.get(args.getNode(i).getNode(0).getString(0));
+                boolean check = false;
+                Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<String, ArrayList<String>> entry = it.next();
+                    System.out.println(nm);
+                    if (i < entry.getValue().size() && entry.getValue().get(0).equals("int32_t") || entry.getValue().get(0).equals("float")) {
+                        n.add("int32_t");
+                        check = true;
+                    }
+                }  
+                if (!check && id.equals("byte"))
+                    n.add("double");
             } else if (args.getNode(i).hasName("FloatingPointLiteral")) {
                 Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
                 while (it.hasNext()) {

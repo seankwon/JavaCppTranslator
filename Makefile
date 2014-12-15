@@ -19,6 +19,8 @@ define TESTS
 	g++ main.cc && ./a.out
 	java Sentinel tests/Test010.java
 	g++ main.cc && ./a.out
+	java Sentinel tests/Test011.java
+	g++ main.cc && ./a.out
 	java Sentinel tests/Test018.java
 	g++ main.cc && ./a.out
 	java Sentinel tests/Test019.java
@@ -31,10 +33,18 @@ define TESTS
 	g++ main.cc && ./a.out 
 	java Sentinel tests/Test023.java
 	g++ main.cc && ./a.out
-	java Sentinel tests/Test032.java
+	java Sentinel tests/Test024.java
 	g++ main.cc && ./a.out
-	DONE 
-	
+	java Sentinel tests/Test025.java
+	g++ main.cc && ./a.out
+	java Sentinel tests/Test032.java
+	g++ main.cc && ./a.out DONE
+	java Sentinel tests/Test033.java
+	g++ main.cc && ./a.out DONE
+	java Sentinel tests/Test034.java
+	g++ main.cc && ./a.out
+	java Sentinel tests/Test035.java
+	g++ main.cc && ./a.out
 endef
 
 define EXCEPTIONS
