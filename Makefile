@@ -31,6 +31,8 @@ define TESTS
 	g++ main.cc && ./a.out 
 	java Sentinel tests/Test023.java
 	g++ main.cc && ./a.out
+	java Sentinel tests/Test032.java
+	g++ main.cc && ./a.out
 	DONE 
 	
 endef

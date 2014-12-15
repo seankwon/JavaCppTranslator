@@ -214,11 +214,25 @@ public class HeaderFileWriter {
                         tempStr += checkOld(m) ? "" : c.name;
                         while (it.hasNext()) {
                             Map.Entry<String, String> entry = it.next();
-                            if (paramsCounter == 0) {
-                                if (!entry.getValue().equals("Object")) {
-                                    if (!m.name.equals("equals")) {
+                            /*if (paramsCounter == 0) {
+                                if (!m.className.equals("Object")) {
+                                    if (!entry.getValue().equals("Object")) {
                                         tempStr += ", " + entry.getValue();
                                     }
+                                }
+                            } else {
+                                tempStr += ", " + entry.getValue();
+                            }*/
+                            if (paramsCounter == 0) { // if we are looking at the first parameter
+                                if (!m.className.equals("Object")) { // and it's not an inherited object method
+                                    tempStr += ", " + entry.getValue(); // add the value as usual
+                                    /*
+                                    if (!entry.getValue().equals("Object")) {
+                                        paramsString += ", " + entry.getValue();
+                                    }
+                                    */
+                                } else {
+                                    // do nothing
                                 }
                             } else {
                                 tempStr += ", " + entry.getValue();
@@ -243,11 +257,16 @@ public class HeaderFileWriter {
                         it = m.params.entrySet().iterator();
                         while (it.hasNext()) {
                             Map.Entry<String, String> entry = it.next();
-                            if (paramsCounter == 0) {
-                                if (!entry.getValue().equals("Object")) {
-                                    if (!m.name.equals("equals")) {
+                            if (paramsCounter == 0) { // if we are looking at the first parameter
+                                if (!m.className.equals("Object")) { // and it's not an inherited object method
+                                    paramsString += ", " + entry.getValue(); // add the value as usual
+                                    /*
+                                    if (!entry.getValue().equals("Object")) {
                                         paramsString += ", " + entry.getValue();
                                     }
+                                    */
+                                } else {
+                                    // do nothing
                                 }
                             } else {
                                 paramsString += ", " + entry.getValue();
