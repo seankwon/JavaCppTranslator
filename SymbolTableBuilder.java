@@ -41,10 +41,12 @@ public class SymbolTableBuilder extends Visitor {
     private boolean notDoneClassVars = false;
     private boolean fromNewClassExpression = false;
     private boolean fromArgs = false;
+    private boolean inLoop = false;
     private StringBuilder constructorCode;
     private String currentObject = "";
     private String OUTPUT_FILE_NAME = "main.cc";
     private String nullCheck = "";
+    private String pop  = "";
     private String testClass;
     private String cn;
 
@@ -219,14 +221,13 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitNewArrayExpression(GNode n){
-
-        System.out.println("poop sauce\n" + n.toString());
         w.print("new __rt::Array<" + cn + ">(");
         visit(n);
         w.print(")");
     } 
 
     public void visitForStatement(GNode n) {
+        inLoop = true;
         int i = 0;
         w.print("for(");
         table.enter(table.freshName("forStatement"));
@@ -246,9 +247,11 @@ public class SymbolTableBuilder extends Visitor {
             }
         }
         table.exit();
+        inLoop = false;
     }
 
     public void visitWhileStatement(GNode n) {
+        inLoop = true;
         int i = 0;
         w.print("while(");
         table.enter(table.freshName("whileStatement"));
@@ -268,6 +271,7 @@ public class SymbolTableBuilder extends Visitor {
             }
         }
         table.exit();
+        inLoop = false;
     }
       
     public void visit(GNode n) {
@@ -368,7 +372,10 @@ public class SymbolTableBuilder extends Visitor {
             if (isGlobalFromTest(var))
                 w.print("test->"+var);
             else if (isGlobalVar(var))
-                w.print("__this->"+var);
+                if(!inLoop)
+                    w.print("__this->"+var);
+                else
+                    w.print(var);
             else
                 w.print(var);
         } else {     //else the variable is a local variable
@@ -395,6 +402,7 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitSubscriptExpression(GNode n) {
+        pop = "(*" + n.getNode(0).getString(0) + ")[" + n.getNode(1).getString(0) + "]";
         w.print("(*" + n.getNode(0).getString(0) + ")[" + n.getNode(1).getString(0) + "]");
     }
 
@@ -448,17 +456,20 @@ public class SymbolTableBuilder extends Visitor {
             if (n.getString(2).equals("println")) {
                 w.print(" << std::endl");
             }
-        } else if (n.getNode(0).hasName("SubscriptExpression")) {
+        } else if (n.getNode(0).hasName("SubscriptExpression") || n.getNode(0).hasName("CastExpression")) {
+            System.out.println("asdf\n" + n.toString());
+            int once = 0;
             for (Object o : n) {
                 if (o instanceof Node){
                     Node p = (Node) o;
                     if(p.hasName("Arguments")){
-                        break;
+                        w.print("->__vptr->" + n.getString(2));
                     }
                     dispatch((Node) o);
                 }
             }
-        }else {
+        }
+        else {
             int i = 1;
             //System.out.println(n.getNode(0).toString());
             if(!n.getNode(0).hasName("SelectionExpression")){
@@ -496,6 +507,13 @@ public class SymbolTableBuilder extends Visitor {
             dispatch((Node) o);
     }
     
+    public void visitCastExpression(GNode n){
+        w.print("((" + n.getNode(0).getNode(0).getString(0) + ")");
+        visit(n);
+        w.print(")");
+        currentObject = "(" + n.getNode(0).getNode(0).getString(0) + ")" + pop;
+    }
+
     public void visitAdditiveExpression(GNode n){
         String s = " " + n.getString(1) + " ";
         visit2(n,s);
