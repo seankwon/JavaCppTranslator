@@ -217,7 +217,9 @@ public class HeaderFileWriter {
                             Map.Entry<String, String> entry = it.next();
                             if (paramsCounter == 0) {
                                 if (!entry.getValue().equals("Object")) {
-                                    tempStr += ", " + entry.getValue();
+                                    if (!m.name.equals("equals")) {
+                                        tempStr += ", " + entry.getValue();
+                                    }
                                 }
                             } else {
                                 tempStr += ", " + entry.getValue();
@@ -244,7 +246,9 @@ public class HeaderFileWriter {
                             Map.Entry<String, String> entry = it.next();
                             if (paramsCounter == 0) {
                                 if (!entry.getValue().equals("Object")) {
-                                    paramsString += ", " + entry.getValue();
+                                    if (!m.name.equals("equals")) {
+                                        paramsString += ", " + entry.getValue();
+                                    }
                                 }
                             } else {
                                 paramsString += ", " + entry.getValue();
