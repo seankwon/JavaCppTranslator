@@ -42,6 +42,7 @@ public class SymbolTableBuilder extends Visitor {
     private boolean fromNewClassExpression = false;
     private boolean fromArgs = false;
     private boolean inLoop = false;
+    private boolean doneCons = false;
     private StringBuilder constructorCode;
     private String currentObject = "";
     private String OUTPUT_FILE_NAME = "main.cc";
@@ -82,11 +83,13 @@ public class SymbolTableBuilder extends Visitor {
         writeVTable(current_class.name);
         table.enter(className);
         table.mark(n);
-        if (current_class.globalVars.size() <= 0) {
+        if (current_class.globalVars.size() <= 0 && !doneCons) {
             beginInit(current_class.name);
             endInit();
+            doneCons = true;
         }
         visit(n);
+        doneCons = false;
         checkConstructors();
         current_class = null;
         current_class_global_variables = null;
@@ -99,6 +102,11 @@ public class SymbolTableBuilder extends Visitor {
         System.out.println(n);
         testClass = findTestClass();
         String methodName = JavaEntities.methodSymbolFromAst(n);
+        if (!doneCons) {
+            beginInit(current_class.name);
+            endInit();
+            doneCons = true;
+        }
         table.enter(methodName);
         table.mark(n);
         if (findClass(n.getString(3)) == null) {
@@ -283,13 +291,8 @@ public class SymbolTableBuilder extends Visitor {
     public final List<Type> visitFieldDeclaration(final GNode n) {
         notDoneClassVars = (current_class != null && current_method !=null);
         if(notDoneClassVars) {
-            //checks if field declaration is an array
             if (checkIfArray(n)){
                 printArray(n);
-               // System.out.println("diap:\n" + n.toString());
-                //System.out.println(n.getNode(2).toString());
-               // visit(n.getNode(2));
-             //   return null;
             }
             else    
                 w.print(convertString(n.getGeneric(1).getGeneric(0).getString(0)) + " ");
@@ -299,12 +302,15 @@ public class SymbolTableBuilder extends Visitor {
                 w.println("__rt::checkNotNull("+nullCheck+");");
             nullCheck = "";
         } else {
-            beginInit(current_class.name);
-            w.print("__this->");
-            visit(n);
-            nullCheck = "";
-            w.println(";");
-            endInit();
+            if (!doneCons) {
+                beginInit(current_class.name);
+                w.print("__this->");
+                visit(n);
+                nullCheck = "";
+                w.println(";");
+                endInit();
+                doneCons = true;
+            }
         }
         @SuppressWarnings("unchecked")
             final List<Attribute> modifiers = (List<Attribute>) dispatch(n.getNode(0));
@@ -433,6 +439,10 @@ public class SymbolTableBuilder extends Visitor {
 
     public void visitCallExpression(GNode n) {
         JavaMethod method;
+        if (n.getString(2) != null &&n.getString(2).equals("super")) {
+            visit(n);
+            return;
+        }
         if (n.getNode(0) == null) {
             //case when the test class is actually being called
             int i = 1;
