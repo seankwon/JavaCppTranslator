@@ -5,6 +5,8 @@
  */
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Hashtable;
 import xtc.lang.JavaFiveParser;
 import xtc.parser.ParseException;
@@ -16,21 +18,29 @@ import xtc.tree.Printer;
 import xtc.tree.Visitor;
 
 public class CustomVisitor extends xtc.tree.Visitor {
+    private int methodCount;
     private ArrayList<JavaClass> classes;
     private ArrayList<JavaMethod> methods;
     private Hashtable<String, String> paramsList;
     private Hashtable<String, String> cparamsList;
+    private Hashtable<String, String> nameMangle;
+    private Hashtable<String, String> FoundTypes;
+    private Hashtable<String, ArrayList<String>> nm;
     private ArrayList<JavaGlobalVariable> globalVars;
     private boolean isClassScope = false;
     private boolean isConstructor = false;
     private String class_name;
+    private int currscore;
 
     public CustomVisitor() {
         classes = new ArrayList<JavaClass>();
+        FoundTypes = new Hashtable<String, String>();
         methods = new ArrayList<JavaMethod>();
         paramsList = new Hashtable<String, String>();
         cparamsList = new Hashtable<String, String>();
         globalVars = new ArrayList<JavaGlobalVariable>();
+        nm = new Hashtable<String, ArrayList<String>>();
+        methodCount = 0;
     }
 
     public ArrayList<JavaClass> getClasses() {
@@ -74,11 +84,12 @@ public class CustomVisitor extends xtc.tree.Visitor {
         c.globalVars = (tempGlobalVars);
         // add class to list of classes
         classes.add(c);
+        //System.out.println(c);
         // clear methods in order add methods to another class
         methods.clear();
         cparamsList.clear();
         globalVars.clear();
-
+        methodCount = 0;
     }
     public void visitConstructorDeclaration(GNode n){
         isConstructor = true;
@@ -96,11 +107,20 @@ public class CustomVisitor extends xtc.tree.Visitor {
         // create new objects to initialize
         JavaMethod m = new JavaMethod();
         Hashtable p = new Hashtable<String, String>();
-
+        String oldName = n.getString(3);
         // add method name
-        m.name = (n.getString(3));
+        if (checkIfMethodExists(n.getString(3))) {
+            m.name = (n.getString(3)) + methodCount;
+            n.set(3, n.getString(3)+methodCount);
+            methodCount++;
+        } else {
+            m.name = n.getString(3); 
+        }
         // add method modifier
-        m.modifier = (n.getGeneric(0).getGeneric(0).getString(0));
+        if (n.getGeneric(0).size() == 0)
+            m.modifier = "public";
+        else
+            m.modifier = (n.getGeneric(0).getGeneric(0).getString(0));
         // add implementation
         m.implementation = (n);
         // add method return type
@@ -117,6 +137,15 @@ public class CustomVisitor extends xtc.tree.Visitor {
 
         p.putAll(paramsList);
         m.params = (p);
+        if (checkIfMethodExists(oldName)) {
+            Iterator<Map.Entry<String, String>> it = m.params.entrySet().iterator();
+            ArrayList<String> al = new ArrayList<String>();
+            while (it.hasNext()) {
+                Map.Entry<String, String> entry = it.next();
+                al.add(entry.getValue());
+            }  
+            nm.put(m.name, al);
+        }
         // add method to list of methods
         methods.add(m);
         // reset method when done with one method
@@ -134,6 +163,7 @@ public class CustomVisitor extends xtc.tree.Visitor {
     }
 
     public void visitFieldDeclaration(GNode n) {
+        FoundTypes.put(n.getNode(2).getNode(0).getString(0), n.getNode(1).getNode(0).getString(0));
         if (isClassScope) {
             JavaGlobalVariable globalVariable = new JavaGlobalVariable();
             globalVariable.name = (n.getGeneric(2).getGeneric(0).getString(0));
@@ -149,11 +179,138 @@ public class CustomVisitor extends xtc.tree.Visitor {
         visit(n);
     }
 
+    public void visitCallExpression(GNode n) {
+        //node 3
+        GNode args = n.getGeneric(3);
+        ArrayList<String> argsList = (nameMangle(args));
+        if (argsList.size() > 0) {
+            Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<String, ArrayList<String>> entry = it.next();
+                if (entry.getValue().equals(argsList)) {
+                    n.set(2, entry.getKey());
+                    break;
+                } else {
+                    if (checkcl(argsList, entry.getValue())) {
+                        n.set(2, entry.getKey());
+                    }
+                }
+            }  
+        }
+        visit(n);
+    }
+
+    public JavaClass findClass(String s) {
+        for (JavaClass c : classes) 
+            if (c.name.equals(s))
+                return c;
+        return null;
+    }
+
+    public boolean checkcl(ArrayList<String> argsList, ArrayList<String> curr) {
+        boolean checker = false;
+        JavaClass c = null;
+        int tempscore = 0;
+        if (curr.size() != argsList.size()) {
+            return checker;
+        }
+
+        for (int i = 0; i < argsList.size(); i++) {
+            c = findClass(argsList.get(i));
+            if (c == null) {
+                return false;
+            } else {
+                String cl = (findClass(curr.get(i)) == null) ? "Object" : (findClass(curr.get(i)).name);
+                if (c.name.equals(cl)) {
+                    tempscore++;
+                    if (argsList.size()-1 == i) {
+                        if (tempscore >= currscore){
+                            currscore = tempscore; 
+                            checker = true;
+                        }
+                        return checker;
+                    } else if (i == 0) {
+                        continue;
+                    }
+                }
+
+                if ((cl != null && c.hasParentOf(cl)) || (c != null && cl.equals("Object"))) {
+                    if (argsList.size()-1 == i) {
+                        if (tempscore >= currscore){
+                            currscore = tempscore; 
+                            checker = true;
+                        }
+                        return checker;
+                    } else if (i == 0) {
+                        continue;
+                    }
+                } else {
+                    return checker; 
+                }
+            }
+        }
+
+        return checker; 
+    }
+
+    public ArrayList<String> nameMangle(GNode args) {
+        ArrayList<String> n = new ArrayList<String>();
+        for (int i = 0; i < args.size(); i++) {
+            if (args.getNode(i) != null && args.getNode(i).hasName("PrimaryIdentifier")) {
+                // method with 1 argument
+                String id = FoundTypes.get(args.getNode(i).getString(0));
+                Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<String, ArrayList<String>> entry = it.next();
+                    if (i < entry.getValue().size() && entry.getValue().get(i).equals(id)) {
+                        n.add(entry.getValue().get(i));
+                        if (args.size() == 1) return n;
+                    }
+                }  
+            } else if (args.getNode(i).hasName("FloatingPointLiteral")) {
+                Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<String, ArrayList<String>> entry = it.next();
+                    if (i < entry.getValue().size() && entry.getValue().get(i).equals("double") || entry.getValue().get(0).equals("float")) {
+                        n.add(entry.getValue().get(i));
+                    }
+                }  
+            } else if (args.getNode(i).hasName("NewClassExpression")) {
+                String id = args.getNode(i).getNode(2).getString(0);
+                Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<String, ArrayList<String>> entry = it.next();
+                    if (i < entry.getValue().size() && entry.getValue().get(i).equals(id)) {
+                        n.add(entry.getValue().get(i));
+                    }
+                }  
+            } else if (args.getNode(i).hasName("CastExpression")) {
+                String id = args.getNode(i).getNode(0).getNode(0).getString(0);
+                Iterator<Map.Entry<String, ArrayList<String>>> it = nm.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<String, ArrayList<String>> entry = it.next();
+                    if (i < entry.getValue().size() && entry.getValue().get(i).equals(id)) {
+                        n.add(entry.getValue().get(i));
+                        if (args.size() == 1) return n;
+                    }
+                }
+            }
+        }
+        return n;
+    }
+
     public void visit(Node n) {
         for (Object o : n) {
             // visit the nearest instance of a node 
             if (o instanceof Node) dispatch((Node) o);
         }
+    }
+
+    public boolean checkIfMethodExists(String name) {
+        for (JavaMethod m : methods) {
+            if (m.name.equals(name)) return true;
+        }
+        return false;
     }
 
     public String convertString(String str) {
@@ -169,6 +326,8 @@ public class CustomVisitor extends xtc.tree.Visitor {
               return ("bool");
           } else if (str.equals("final")) {
               return ("const");
+          } else if (str.equals("byte")){
+              return "unsigned char";
           } else {
               return str; 
           }
