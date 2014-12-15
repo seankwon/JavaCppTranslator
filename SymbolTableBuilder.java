@@ -384,7 +384,7 @@ public class SymbolTableBuilder extends Visitor {
     }
 
     public void visitSubscriptExpression(GNode n) {
-        w.print(n.getNode(0).getString(0) + "[" + n.getNode(1).getString(0) + "]");
+        w.print("(*" + n.getNode(0).getString(0) + ")[" + n.getNode(1).getString(0) + "]");
     }
 
 
