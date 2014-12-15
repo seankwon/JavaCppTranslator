@@ -29,7 +29,6 @@ public class SymbolTableBuilder extends Visitor {
     final private Runtime runtime;
     public MethodsWriter w;
     private ArrayList<JavaClass> classes;
-    private Hashtable<String, String> allVars = new Hashtable<String, String>();
     private JavaClass current_class;
     private JavaMethod current_method;
     private ArrayList<JavaMethod> current_class_methods;
@@ -334,14 +333,6 @@ public class SymbolTableBuilder extends Visitor {
                                                            countDimensions(declNode.getGeneric(1)));
             Type entity = isLocal ? VariableT.newLocal(dimType, name) : 
                 VariableT.newField(dimType, name);
-            if (checkNode != null) {
-                if (checkNode.hasName("NewClassExpression"))
-                    allVars.put(name, name);
-                else if (checkNode.hasName("PrimaryIdentifier")) {
-                    if (allVars.containsKey(checkNode.getString(0)))
-                        allVars.put(name, allVars.get(checkNode.getString(0)));
-                }
-            }
 
             for (Attribute mod : modifiers)
                 entity.addAttribute(mod);
@@ -357,8 +348,7 @@ public class SymbolTableBuilder extends Visitor {
         //w.print(n.getString(0));
         boolean scope = false;
         boolean thisP = false;
-        String var = (allVars.containsKey(n.getString(0))) ? allVars.get(n.getString(0)) :
-            n.getString(0);
+        String var = n.getString(0);
         for (JavaClass c : classes)
             if (var.equals(c.name))
                 var = c.name.toLowerCase();
