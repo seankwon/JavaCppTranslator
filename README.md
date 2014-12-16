@@ -5,7 +5,9 @@ semester of my junior year. A team of four others and I created a java to c
 plus plus translator that interpreted java objects and classes into c++
 structs and vtables. It was not entirely finished on completion, and bugs still
 exist in the code. The project used an API known as xtc which provided abstract
-syntax trees for java syntax.
+syntax trees for java syntax. My most commendable contributions to the project were
+implementing smart pointers that simulated dynamic casting and method
+overloading / inheritance. On top of that, miscellanous other tasks.
 
 1. You need a java library called xtc.
 2. "make program"
